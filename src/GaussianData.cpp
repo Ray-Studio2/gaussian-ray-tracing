@@ -1,10 +1,7 @@
 #include "GaussianData.h"
 
-GaussianData::GaussianData()
+GaussianData::GaussianData(const std::string& filename)
 {
-    // TODO: Change file name
-	const std::string filename = "C:/Users/gno/Desktop/GPU-Workers/gaussian-ray-tracing/data/train.ply";
-
 	std::cout << "Loading Gaussian data from " << filename << "\n";
 
 	m_filename = filename;

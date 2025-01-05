@@ -19,7 +19,7 @@ struct GaussianParticle
 class GaussianData
 {
 public:
-	GaussianData();
+	GaussianData(const std::string& filename);
 	~GaussianData();
 
 	size_t getVertexCount() const;

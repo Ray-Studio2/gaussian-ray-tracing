@@ -14,8 +14,8 @@
 
 #include <vector>
 
-GaussianTracer::GaussianTracer()
-	: m_gsData()
+GaussianTracer::GaussianTracer(const std::string& filename)
+	: m_gsData(filename)
 {
 	m_context      = nullptr;
     triangle_input = {};

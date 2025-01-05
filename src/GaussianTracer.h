@@ -20,9 +20,9 @@ class GaussianTracer
 {
 public:
 
-	GaussianTracer();
+	GaussianTracer(const std::string& filename);
 	~GaussianTracer();
-	
+
 	void setSize(unsigned int width, unsigned int height);
 
 	void initialize(int mode);
@@ -51,7 +51,7 @@ private:
 	// Gaussian data
 	GaussianData			    m_gsData;
 	std::vector<GaussianIndice> m_gsIndice;
-	size_t						vertex_count;
+	size_t						vertex_count = 0;
 	float						alpha_min;
 
 	// Optix state
