@@ -1,0 +1,85 @@
+#pragma once
+
+#include <optix.h>
+
+#include <vector_functions.h>
+
+#include "GaussianData.h"
+
+#define MAX_K 6
+#define SH_C0     0.28209479177387814f
+#define SH_C1     0.4886025119029199f
+#define SH_C2_0   1.0925484305920792f
+#define SH_C2_1  -1.0925484305920792f
+#define SH_C2_2   0.31539156525252005f
+#define SH_C2_3  -1.0925484305920792f
+#define SH_C2_4   0.5462742152960396f
+#define SH_C3_0  -0.5900435899266435f
+#define SH_C3_1   2.890611442640554f
+#define SH_C3_2  -0.4570457994644658f
+#define SH_C3_3   0.3731763325901154f
+#define SH_C3_4  -0.4570457994644658f
+#define SH_C3_5   1.445305721320277f
+#define SH_C3_6  -0.5900435899266435f
+
+enum RayType
+{
+	RAY_TYPE_RADIANCE = 0,
+	RAY_TYPE_COUNT
+};
+
+struct RayGenData { };
+struct AnyHitData { };
+struct MissData { };
+
+template <typename T>
+struct Record
+{
+	__align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+	T data;
+};
+
+struct Params
+{
+	uchar3* output_buffer;
+
+	unsigned int width;
+	unsigned int height;
+	int          early_stop;
+	unsigned int k;
+	unsigned int sh_degree_max;
+
+	float3 eye;
+	float3 U;
+	float3 V;
+	float3 W;
+
+	float t_min;
+	float t_max;
+	float T_min;
+	float alpha_min;
+
+	OptixTraversableHandle handle;
+	GaussianParticle* d_particles;
+};
+
+struct HitInfo
+{
+	float t;
+	int particleIndex;
+};
+
+struct RayPayload
+{
+	HitInfo      k_closest[MAX_K + 1];
+	unsigned int hit_count;
+};
+
+struct GaussianIndice
+{
+	size_t index;
+};
+
+typedef Record<RayGenData> RayGenRecord;
+typedef Record<MissData>   MissRecord;
+typedef Record<GaussianIndice> AnyHitRecord;
