@@ -12,7 +12,7 @@ int main() {
 	unsigned int height = 720;
 
 	tracer.setSize(width, height);
-	tracer.initialize(0);
+	tracer.initialize(1);
 
 	GUI gui;
 
