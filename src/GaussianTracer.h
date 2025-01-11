@@ -25,7 +25,7 @@ public:
 
 	void setSize(unsigned int width, unsigned int height);
 
-	void initialize(int mode);
+	void initializeOptix();
 	void initParams();
 	void render(CUDAOutputBuffer& output_buffer);
 	
@@ -42,11 +42,12 @@ public:
 private:
 	void createContext();
 	void buildAccelationStructure();
-	void buildAccelationStructure2();
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
 	void createSBT();
+
+	void filterGaussians();
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -58,8 +59,6 @@ private:
 	OptixDeviceContext	   m_context;
 	OptixBuildInput		   triangle_input;
 	OptixTraversableHandle m_gas;
-	OptixTraversableHandle m_ias;
-	OptixTraversableHandle m_root;
 
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;

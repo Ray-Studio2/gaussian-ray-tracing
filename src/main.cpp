@@ -5,14 +5,14 @@
 #include "Camera.h"
 
 int main() {
-	const std::string filename = "C:/Users/gno/Desktop/GPU-Workers/gaussian-ray-tracing/data/train.ply";
+	const std::string filename = "../../data/train.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = 1280;
 	unsigned int height = 720;
 
 	tracer.setSize(width, height);
-	tracer.initialize(0);
+	tracer.initializeOptix();
 
 	GUI gui;
 
