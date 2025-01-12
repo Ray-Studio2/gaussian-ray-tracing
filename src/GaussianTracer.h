@@ -59,6 +59,8 @@ private:
 	OptixDeviceContext	   m_context;
 	OptixBuildInput		   triangle_input;
 	OptixTraversableHandle m_gas;
+	OptixTraversableHandle m_ias;
+	OptixTraversableHandle m_root;
 
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;
