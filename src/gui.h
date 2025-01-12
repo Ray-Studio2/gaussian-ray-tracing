@@ -22,6 +22,8 @@
 #include <chrono>
 #include <iostream>
 
+#include "Parameters.h"
+
 class GUI
 {
 public:
@@ -31,9 +33,12 @@ public:
 	GLFWwindow* initUI(const char* window_title, int width, int height);
 	void beginFrame();
 	void endFrame();
-	void renderPanel(std::chrono::duration<double>& state_update_time,
-					 std::chrono::duration<double>& render_time,
-					 std::chrono::duration<double>& display_time);
+	void renderGUI(
+		Params& params,
+		std::chrono::duration<double>& state_update_time,
+		std::chrono::duration<double>& render_time,
+		std::chrono::duration<double>& display_time
+	);
 
 private:
 	static void errorCallback(int error, const char* description)
@@ -41,7 +46,10 @@ private:
 		std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 	}
 
-	void displayText(std::chrono::duration<double>& state_update_time,
-					 std::chrono::duration<double>& render_time,
-					 std::chrono::duration<double>& display_time);
+	void renderPanel(Params& params);
+	void displayText(
+		std::chrono::duration<double>& state_update_time,
+		std::chrono::duration<double>& render_time,
+		std::chrono::duration<double>& display_time
+	);
 };

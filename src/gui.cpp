@@ -62,16 +62,32 @@ void GUI::endFrame()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void GUI::renderPanel(
+void GUI::renderGUI(
+    Params& params,
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
-)
+    )
 {
-	ImGui::SetNextWindowPos(ImVec2(860, 20));       // Hardcoded position
-	ImGui::SetNextWindowSize(ImVec2(400, 200));	    // Hardcoded size
-    ImGui::Begin("Pannel");
     displayText(state_update_time, render_time, display_time);
+    renderPanel(params);
+}
+
+void GUI::renderPanel(Params& params)
+{
+	ImGui::SetNextWindowPos(ImVec2(960, 20));
+	ImGui::SetNextWindowSize(ImVec2(300, 680));
+    ImGui::Begin("Pannel");
+
+    if (ImGui::TreeNode("DEBUG"))
+	{
+		ImGui::SliderInt("Hit array size", &params.k, 1, 6);
+		ImGui::SliderFloat("Alpha min", &params.alpha_min, 0.01f, 0.2f);
+		ImGui::SliderFloat("T min", &params.T_min, 0.03f, 0.99f);
+
+		ImGui::TreePop();
+	}
+
 	ImGui::End();
 }
 
@@ -79,8 +95,12 @@ void GUI::displayText(
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
-)
+    )
 {
+    ImGui::SetNextWindowPos(ImVec2(20, 20));
+    ImGui::SetNextWindowSize(ImVec2(200, 80));
+    ImGui::Begin("FPS", 0, ImGuiWindowFlags_NoDecoration);
+
     constexpr std::chrono::duration<double> display_update_min_interval_time(0.5);
     static int32_t                          total_subframe_count = 0;
     static int32_t                          last_update_frames = 0;
@@ -107,10 +127,15 @@ void GUI::displayText(
 
         last_update_time = cur_time;
         last_update_frames = 0;
-        state_update_time = render_time = display_time = std::chrono::duration<double>::zero();
+
+        state_update_time = std::chrono::duration<double>::zero();
+        render_time       = std::chrono::duration<double>::zero();
+        display_time      = std::chrono::duration<double>::zero();
     }
 
     ++total_subframe_count;
 
     ImGui::TextColored(ImColor(0.7f, 0.7f, 0.7f, 1.0f), "%s", display_text);
+
+    ImGui::End();
 }
