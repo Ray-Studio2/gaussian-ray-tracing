@@ -417,8 +417,7 @@ void GaussianTracer::initParams()
     params.t_min         = 1e-3f;
     params.t_max         = 1e5f;
     params.T_min         = 0.03f;
-    params.alpha_min     = 0.1f;
-    params.early_stop    = -1;
+    params.alpha_min     = alpha_min;
     params.sh_degree_max = 0;
 
 	GaussianParticle* particles = new GaussianParticle[vertex_count];
