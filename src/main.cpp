@@ -62,7 +62,7 @@ int main() {
 		t0 = t1;
 
 		gui.beginFrame();
-		gui.renderPanel(state_update_time, render_time, display_time);
+		gui.renderGUI(tracer.params, state_update_time, render_time, display_time);
 		gui.endFrame();
 
 		glfwSwapBuffers(window);
