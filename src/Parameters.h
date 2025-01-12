@@ -39,14 +39,19 @@ struct Record
 	T data;
 };
 
+struct HitInfo
+{
+	float t;
+	int particleIndex;
+};
+
 struct Params
 {
 	uchar3* output_buffer;
 
 	unsigned int width;
 	unsigned int height;
-	int          early_stop;
-	unsigned int k;
+	int			 k;
 	unsigned int sh_degree_max;
 
 	float3 eye;
@@ -61,12 +66,6 @@ struct Params
 
 	OptixTraversableHandle handle;
 	GaussianParticle* d_particles;
-};
-
-struct HitInfo
-{
-	float t;
-	int particleIndex;
 };
 
 struct RayPayload
