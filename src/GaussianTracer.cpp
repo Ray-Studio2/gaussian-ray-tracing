@@ -464,13 +464,13 @@ void GaussianTracer::createSBT()
         cudaMemcpyHostToDevice
     ));
 
-    sbt.raygenRecord = d_raygen_record;
-    sbt.missRecordBase = d_miss_record;
-    sbt.missRecordStrideInBytes = static_cast<uint32_t>(miss_record_size);
-    sbt.missRecordCount = RAY_TYPE_COUNT;
-    sbt.hitgroupRecordBase = d_anyhit_records;
+    sbt.raygenRecord                = d_raygen_record;
+    sbt.missRecordBase              = d_miss_record;
+    sbt.missRecordStrideInBytes     = static_cast<uint32_t>(miss_record_size);
+    sbt.missRecordCount             = RAY_TYPE_COUNT;
+    sbt.hitgroupRecordBase          = d_anyhit_records;
     sbt.hitgroupRecordStrideInBytes = sizeof(AnyHitRecord);
-    sbt.hitgroupRecordCount = static_cast<uint32_t>(anyhit_records.size());
+    sbt.hitgroupRecordCount         = static_cast<uint32_t>(anyhit_records.size());
 }
 
 void GaussianTracer::initParams()
@@ -547,6 +547,11 @@ void GaussianTracer::filterGaussians()
         else
             continue;
     }
+}
+
+void GaussianTracer::setCamera(const Camera& camera)
+{
+	m_camera = camera;
 }
 
 void GaussianTracer::initCamera()

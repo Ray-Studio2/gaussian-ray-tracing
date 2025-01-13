@@ -2,6 +2,8 @@
 
 #include "vector_math.h"
 
+#include <iostream>
+
 class Camera
 {
 public:
@@ -24,6 +26,9 @@ public:
 	void setMoveSpeed(const float& val) { m_moveSpeed = val; }
 
 	void UVWFrame(float3& U, float3& V, float3& W) const;
+
+	// Mouse tracking
+	void updateTracking(int x, int y);
 
 private:
 	float3 m_eye;

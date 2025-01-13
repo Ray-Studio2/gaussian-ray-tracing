@@ -29,6 +29,7 @@ public:
 	void initParams();
 	void render(CUDAOutputBuffer& output_buffer);
 	
+	void setCamera(const Camera& camera);
 	void initCamera();
 	void updateCamera();
 
