@@ -49,6 +49,29 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     return window;
 }
 
+void GUI::startTracking(int x, int y)
+{
+    m_prevPosX = x;
+	m_prevPosY = y;
+	m_tracking = true;
+}
+
+void GUI::updateTracking(int x, int y)
+{
+    if (!m_tracking) {
+		startTracking(x, y);
+		return;
+    }
+	
+	int deltaX = x - m_prevPosX;
+	int deltaY = y - m_prevPosY;
+
+    m_prevPosX = x;
+    m_prevPosY = y;
+    m_latitude  = radians(std::min(89.0f, std::max(-89.0f, degrees(m_latitude) + 0.5f * deltaY)));
+    m_longitude = radians(fmod(degrees(m_longitude) - 0.5f * deltaX, 360.0f));
+}
+
 void GUI::beginFrame()
 {
     ImGui_ImplOpenGL3_NewFrame();
@@ -87,6 +110,12 @@ void GUI::renderPanel(Params& params)
 
 		ImGui::TreePop();
 	}
+
+    if (ImGui::TreeNode("Reflection"))
+    {
+		// TODO: Reflection
+		ImGui::TreePop();
+    }
 
 	ImGui::End();
 }
