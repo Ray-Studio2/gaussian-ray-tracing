@@ -4,8 +4,54 @@
 #include "Display.h"
 #include "Camera.h"
 
+GUI		gui;
+Camera  camera;
+int32_t mouse_button = -1;
+bool    camera_changed = true;
+
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+
+	if (action == GLFW_PRESS)
+	{
+		mouse_button = button;
+		gui.startTracking(static_cast<int>(xpos), static_cast<int>(ypos));
+	}
+	else
+	{
+		mouse_button = -1;
+	}
+}
+
+//static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+//{
+//	Params* params = static_cast<Params*>(glfwGetWindowUserPointer(window));
+//
+//	if (mouse_button == GLFW_MOUSE_BUTTON_LEFT)
+//	{
+//		camera.updateTracking(static_cast<int>(xpos), static_cast<int>(ypos));
+//	}
+//	else if (mouse_button == GLFW_MOUSE_BUTTON_RIGHT)
+//	{
+//		// TODO: Implement Eye Fixed mode
+//	}
+//}
+
+static void keyCallback(GLFWwindow* window, int32_t key, int32_t /*scancode*/, int32_t action, int32_t /*mods*/)
+{
+	if (action == GLFW_PRESS)
+	{
+		if (key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE)
+		{
+			glfwSetWindowShouldClose(window, true);
+		}
+	}
+}
+
 int main() {
-	const std::string filename = "../../data/train.ply";
+	const std::string filename = "../../data/test.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = 1280;
@@ -14,15 +60,19 @@ int main() {
 	tracer.setSize(width, height);
 	tracer.initializeOptix();
 
-	GUI gui;
-
 	GLFWwindow* window = gui.initUI("Gaussian Tracer", width, height);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	//glfwSetCursorPosCallback(window, cursorPosCallback);
+	glfwSetKeyCallback(window, keyCallback);
 
 	GLDisplay gldisplay;
 
 	CUDAOutputBuffer output_buffer(width, height);
 	output_buffer.setStream(tracer.stream);
 
+	gui.setCamera(&camera);
+
+	tracer.setCamera(camera);
 	tracer.initCamera();
 	tracer.initParams();
 
