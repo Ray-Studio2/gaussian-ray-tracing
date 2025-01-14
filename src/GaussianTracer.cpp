@@ -549,27 +549,40 @@ void GaussianTracer::filterGaussians()
     }
 }
 
-void GaussianTracer::setCamera(const Camera& camera)
+void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 {
-	m_camera = camera;
-}
-
-void GaussianTracer::initCamera()
-{
-    m_camera.setEye(make_float3(0.0f, 0.0f, 3.0f));
-    m_camera.setLookat(make_float3(0.0f, 0.0f, 0.0f));
-    m_camera.setUp(make_float3(0.0f, 1.0f, 0.0f));
-    m_camera.setFovY(60.0f);
-    m_camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
-
-	m_camera_changed = true;
-}
-
-void GaussianTracer::updateCamera()
-{
-	if (!m_camera_changed)
+	if (!camera_changed)
 		return;
+    camera_changed = false;
 
-	params.eye = m_camera.eye();
-	m_camera.UVWFrame(params.U, params.V, params.W);
+	camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
+	params.eye = camera.eye();
+	camera.UVWFrame(params.U, params.V, params.W);
 }
+
+//void GaussianTracer::setCamera(const Camera& camera)
+//{
+//	m_camera = camera;
+//}
+//
+//void GaussianTracer::initCamera()
+//{
+//    m_camera.setEye(make_float3(0.0f, 0.0f, 3.0f));
+//    m_camera.setLookat(make_float3(0.0f, 0.0f, 0.0f));
+//    m_camera.setUp(make_float3(0.0f, 1.0f, 0.0f));
+//    m_camera.setFovY(60.0f);
+//    m_camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
+//
+//	m_camera_changed = true;
+//}
+//
+//void GaussianTracer::updateCamera(const Camera& camera)
+//{
+//    m_camera = camera;
+//
+//	if (!m_camera_changed)
+//		return;
+//
+//	params.eye = m_camera.eye();
+//	m_camera.UVWFrame(params.U, params.V, params.W);
+//}

@@ -49,6 +49,19 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     return window;
 }
 
+void GUI::reinitOrientationFromCamera()
+{
+    m_camera->UVWFrame(m_u, m_v, m_w);
+    m_u = normalize(m_u);
+    m_v = normalize(m_v);
+    m_w = normalize(-m_w);
+    std::swap(m_v, m_w);
+    m_latitude = 0.0f;
+    m_longitude = 0.0f;
+    m_cameraEyeLookatDistance = length(m_camera->lookat() - m_camera->eye());
+	std::cout << "Camera eye-lookat distance: " << m_cameraEyeLookatDistance << std::endl;
+}
+
 void GUI::startTracking(int x, int y)
 {
     m_prevPosX = x;
@@ -70,6 +83,36 @@ void GUI::updateTracking(int x, int y)
     m_prevPosY = y;
     m_latitude  = radians(std::min(89.0f, std::max(-89.0f, degrees(m_latitude) + 0.5f * deltaY)));
     m_longitude = radians(fmod(degrees(m_longitude) - 0.5f * deltaX, 360.0f));
+
+    updateCamera();
+}
+
+void GUI::updateCamera()
+{
+    // use latlon for view definition
+    float3 localDir;
+    localDir.x = cos(m_latitude) * sin(m_longitude);
+    localDir.y = cos(m_latitude) * cos(m_longitude);
+    localDir.z = sin(m_latitude);
+
+    float3 dirWS = m_u * localDir.x + m_v * localDir.y + m_w * localDir.z;
+    
+    const float3& eye = m_camera->eye();
+    m_camera->setLookat(eye - dirWS * m_cameraEyeLookatDistance);
+}
+
+void GUI::setReferenceFrame(const float3& u, const float3& v, const float3& w)
+{
+    m_u = u;
+    m_v = v;
+    m_w = w;
+    float3 dirWS = -normalize(m_camera->lookat() - m_camera->eye());
+    float3 dirLocal;
+    dirLocal.x = dot(dirWS, u);
+    dirLocal.y = dot(dirWS, v);
+    dirLocal.z = dot(dirWS, w);
+    m_longitude = atan2(dirLocal.x, dirLocal.y);
+    m_latitude = asin(dirLocal.z);
 }
 
 void GUI::beginFrame()

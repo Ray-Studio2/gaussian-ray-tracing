@@ -16,6 +16,7 @@ public:
 	{ }
 
 	const float3& eye() const { return m_eye; }
+	const float3& lookat() const { return m_lookat; }
 
 	void setEye(const float3& val) { m_eye = val; }
 	void setLookat(const float3& val) { m_lookat = val; }
@@ -26,9 +27,6 @@ public:
 	void setMoveSpeed(const float& val) { m_moveSpeed = val; }
 
 	void UVWFrame(float3& U, float3& V, float3& W) const;
-
-	// Mouse tracking
-	void updateTracking(int x, int y);
 
 private:
 	float3 m_eye;

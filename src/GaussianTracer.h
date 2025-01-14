@@ -29,16 +29,17 @@ public:
 	void initParams();
 	void render(CUDAOutputBuffer& output_buffer);
 	
-	void setCamera(const Camera& camera);
-	void initCamera();
-	void updateCamera();
+	//void setCamera(const Camera& camera);
+	//void initCamera();
+	//void updateCamera(const Camera& camera);
+	void updateCamera(Camera& camera, bool& camera_changed);
 
 	Params	 params;
 	CUstream stream;
 
-	// Camera
-	Camera m_camera;
-	bool   m_camera_changed = true;
+	//// Camera
+	//Camera m_camera;
+	//bool   m_camera_changed = true;
 
 private:
 	void createContext();
