@@ -76,8 +76,8 @@ void GUI::updateTracking(int x, int y)
 		return;
     }
 	
-	int deltaX = x - m_prevPosX;
-	int deltaY = y - m_prevPosY;
+	int deltaX = -(x - m_prevPosX);
+    int deltaY = -(y - m_prevPosY);
 
     m_prevPosX = x;
     m_prevPosY = y;
@@ -145,19 +145,16 @@ void GUI::renderPanel(Params& params)
 	ImGui::SetNextWindowSize(ImVec2(300, 680));
     ImGui::Begin("Pannel");
 
-    if (ImGui::TreeNode("DEBUG"))
+    if (ImGui::CollapsingHeader("DEBUG"))
 	{
 		ImGui::SliderInt("Hit array size", &params.k, 1, 6);
 		ImGui::SliderFloat("Alpha min", &params.alpha_min, 0.01f, 0.2f);
 		ImGui::SliderFloat("T min", &params.T_min, 0.03f, 0.99f);
-
-		ImGui::TreePop();
 	}
 
-    if (ImGui::TreeNode("Reflection"))
+    if (ImGui::CollapsingHeader("Reflection"))
     {
 		// TODO: Reflection
-		ImGui::TreePop();
     }
 
 	ImGui::End();
