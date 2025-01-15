@@ -61,7 +61,7 @@ void initCamera()
 	camera_changed = true;
 
 	gui.setCamera(&camera);
-	gui.setMoveSpeed(10.0f);
+	gui.setMoveSpeed(7.0f);
 	gui.setReferenceFrame(
 		make_float3(1.0f, 0.0f, 0.0f),
 		make_float3(0.0f, 0.0f, 1.0f),
@@ -69,7 +69,8 @@ void initCamera()
 	);
 }
 
-int main() {
+int main() 
+{
 	const std::string filename = "../../data/train.ply";
 	GaussianTracer tracer(filename);
 	
@@ -91,10 +92,6 @@ int main() {
 
 	initCamera();
 
-	//gui.setCamera(&camera);
-
-	//tracer.setCamera(camera);
-	//tracer.initCamera();
 	tracer.initParams();
 
 	std::chrono::duration<double> state_update_time(0.0);
