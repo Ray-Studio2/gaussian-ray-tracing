@@ -14,6 +14,12 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int action, int 
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse)
+	{
+		return;
+	}
+
 	if (action == GLFW_PRESS)
 	{
 		mouse_button = button;
@@ -131,7 +137,7 @@ int main()
 		t0 = t1;
 
 		gui.beginFrame();
-		gui.renderGUI(tracer.params, state_update_time, render_time, display_time);
+		gui.renderGUI(tracer, state_update_time, render_time, display_time);
 		gui.endFrame();
 
 		glfwSwapBuffers(window);
