@@ -129,17 +129,17 @@ void GUI::endFrame()
 }
 
 void GUI::renderGUI(
-    Params& params,
+    GaussianTracer& tracer,
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
     )
 {
     displayText(state_update_time, render_time, display_time);
-    renderPanel(params);
+    renderPanel(tracer);
 }
 
-void GUI::renderPanel(Params& params)
+void GUI::renderPanel(GaussianTracer& tracer)
 {
 	ImGui::SetNextWindowPos(ImVec2(960, 20));
 	ImGui::SetNextWindowSize(ImVec2(300, 680));
@@ -147,9 +147,9 @@ void GUI::renderPanel(Params& params)
 
     if (ImGui::CollapsingHeader("DEBUG"))
 	{
-		ImGui::SliderInt("Hit array size", &params.k, 1, 6);
-		ImGui::SliderFloat("Alpha min", &params.alpha_min, 0.01f, 0.2f);
-		ImGui::SliderFloat("T min", &params.T_min, 0.03f, 0.99f);
+		ImGui::SliderInt("Hit array size", &tracer.params.k, 1, 6);
+		ImGui::SliderFloat("Alpha min", &tracer.params.alpha_min, 0.01f, 0.2f);
+		ImGui::SliderFloat("T min", &tracer.params.T_min, 0.03f, 0.99f);
 	}
 
     if (ImGui::CollapsingHeader("Reflection"))

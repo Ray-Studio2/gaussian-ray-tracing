@@ -22,7 +22,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "Parameters.h"
+#include "GaussianTracer.h"
 #include "Camera.h"
 
 class GUI
@@ -35,7 +35,7 @@ public:
 	void beginFrame();
 	void endFrame();
 	void renderGUI(
-		Params& params,
+		GaussianTracer& tracer,
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
 		std::chrono::duration<double>& display_time
@@ -57,7 +57,7 @@ private:
 		std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 	}
 
-	void renderPanel(Params& params);
+	void renderPanel(GaussianTracer& tracer);
 	void displayText(
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
