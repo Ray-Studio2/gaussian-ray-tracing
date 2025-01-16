@@ -15,36 +15,36 @@
 #include <vector>
 
 GaussianTracer::GaussianTracer(const std::string& filename)
-	: m_gsData(filename)
+    : m_gsData(filename)
 {
-	m_context      = nullptr;
+    m_context      = nullptr;
     triangle_input = {};
-	m_gas          = 0;
-	m_ias          = 0;
-	m_root         = 0;
+    m_gas          = 0;
+    m_ias          = 0;
+    m_root         = 0;
 
     ptx_module               = 0;
-	pipeline_compile_options = {};
-	raygen_prog_group        = 0;
-	miss_prog_group          = 0;
-	anyhit_prog_group        = 0;
-	pipeline                 = 0;
-	sbt                      = {};
-	stream                   = 0;
+    pipeline_compile_options = {};
+    raygen_prog_group        = 0;
+    miss_prog_group          = 0;
+    anyhit_prog_group        = 0;
+    pipeline                 = 0;
+    sbt                      = {};
+    stream                   = 0;
 
     params = {};
-	params.output_buffer = nullptr;
+    params.output_buffer = nullptr;
 
     d_params = 0;
 
-	vertex_count = m_gsData.getVertexCount();
-	alpha_min    = 0.2f;
+    vertex_count = m_gsData.getVertexCount();
+    alpha_min    = 0.2f;
 
     Icosahedron icosahedron = Icosahedron();
-	vertices   = icosahedron.getVertices();
-	indices    = icosahedron.getIndices();
+    vertices   = icosahedron.getVertices();
+    indices    = icosahedron.getIndices();
     d_vertices = 0;
-	d_indices  = 0;
+    d_indices  = 0;
 }
 
 GaussianTracer::~GaussianTracer()
@@ -231,15 +231,17 @@ void GaussianTracer::buildAccelationStructure()
     instance.flags = OPTIX_INSTANCE_FLAG_NONE;
     instance.traversableHandle = m_gas;
 
-    CUdeviceptr d_instance;
-    const size_t instances_size_in_bytes = sizeof(OptixInstance);
-    CUDA_CHECK(cudaMalloc((void**)&d_instance, instances_size_in_bytes));
-    CUDA_CHECK(cudaMemcpy((void*)d_instance, &instance, instances_size_in_bytes, cudaMemcpyHostToDevice));
+	instances.push_back(instance);
+
+    CUdeviceptr d_instances;
+    const size_t instances_size_in_bytes = instances.size() * sizeof(OptixInstance);
+    CUDA_CHECK(cudaMalloc((void**)&d_instances, instances_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy((void*)d_instances, instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
 
     OptixBuildInput instance_input = {};
     instance_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
-    instance_input.instanceArray.instances = d_instance;
-    instance_input.instanceArray.numInstances = 1;
+    instance_input.instanceArray.instances = d_instances;
+    instance_input.instanceArray.numInstances = static_cast<uint32_t>(instances.size());
 
     OptixAccelBuildOptions instance_accel_options = {};
     instance_accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
@@ -276,7 +278,7 @@ void GaussianTracer::buildAccelationStructure()
 
     CUDA_CHECK(cudaStreamSynchronize(0));
     CUDA_CHECK(cudaFree((void*)d_instance_temp_buffer));
-    CUDA_CHECK(cudaFree((void*)d_instance));
+    CUDA_CHECK(cudaFree((void*)d_instances));
 }
 
 void GaussianTracer::createModule()
@@ -560,29 +562,12 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 	camera.UVWFrame(params.U, params.V, params.W);
 }
 
-//void GaussianTracer::setCamera(const Camera& camera)
-//{
-//	m_camera = camera;
-//}
-//
-//void GaussianTracer::initCamera()
-//{
-//    m_camera.setEye(make_float3(0.0f, 0.0f, 3.0f));
-//    m_camera.setLookat(make_float3(0.0f, 0.0f, 0.0f));
-//    m_camera.setUp(make_float3(0.0f, 1.0f, 0.0f));
-//    m_camera.setFovY(60.0f);
-//    m_camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
-//
-//	m_camera_changed = true;
-//}
-//
-//void GaussianTracer::updateCamera(const Camera& camera)
-//{
-//    m_camera = camera;
-//
-//	if (!m_camera_changed)
-//		return;
-//
-//	params.eye = m_camera.eye();
-//	m_camera.UVWFrame(params.U, params.V, params.W);
-//}
+void GaussianTracer::addMirrorSphere()
+{
+	float3 position = make_float3(0.0f, 0.0f, 0.0f);
+    float  radius   = 1.5f;
+
+	// TODO: Add mirror sphere to Optix
+
+	numberMirrorSpheres++;
+}
