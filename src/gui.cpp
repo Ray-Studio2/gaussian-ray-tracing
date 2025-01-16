@@ -147,14 +147,29 @@ void GUI::renderPanel(GaussianTracer& tracer)
 
     if (ImGui::CollapsingHeader("DEBUG"))
 	{
+        ImGui::PushItemWidth(100);
+
 		ImGui::SliderInt("Hit array size", &tracer.params.k, 1, 6);
 		ImGui::SliderFloat("Alpha min", &tracer.params.alpha_min, 0.01f, 0.2f);
 		ImGui::SliderFloat("T min", &tracer.params.T_min, 0.03f, 0.99f);
 	}
 
+    ImGui::Spacing();
+
     if (ImGui::CollapsingHeader("Reflection"))
     {
 		// TODO: Reflection
+		if (ImGui::Button("Add Primitive"))
+		{
+			tracer.addMirrorSphere();
+		}
+		
+        ImGui::SameLine();
+
+		const char* items[] = { "Sphere" };
+		static int item_current = 0;
+		ImGui::PushItemWidth(70);
+		ImGui::Combo("Primitive Type", &item_current, items, IM_ARRAYSIZE(items));		
     }
 
 	ImGui::End();
