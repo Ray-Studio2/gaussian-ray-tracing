@@ -259,9 +259,7 @@ extern "C" __global__ void __anyhit__anyhit()
 
     prd.hit_count++;
 
-    GaussianIndice* data = reinterpret_cast<GaussianIndice*>(optixGetSbtDataPointer());
-    unsigned int particle_index = data->index;
-	//unsigned int particle_index = optixGetInstanceId();
+	unsigned int particle_index = optixGetInstanceId();
 
     HitInfo hit_info = {optixGetRayTmax(), particle_index};
     for (int i = 0; i < params.k; i++) {
