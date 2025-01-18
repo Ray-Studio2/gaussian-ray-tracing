@@ -158,11 +158,6 @@ static __forceinline__ __device__ float3 trace(
 
     while (params.T_min < T && t_curr < params.t_max)
     {
-       if (params.early_stop == step++)
-       {
-           break;
-       }
-
        for (int i = 0; i < params.k; i++)
        {
            prd.k_closest[i].t = params.t_max;

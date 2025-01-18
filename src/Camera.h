@@ -2,6 +2,8 @@
 
 #include "vector_math.h"
 
+#include <iostream>
+
 class Camera
 {
 public:
@@ -14,6 +16,7 @@ public:
 	{ }
 
 	const float3& eye() const { return m_eye; }
+	const float3& lookat() const { return m_lookat; }
 
 	void setEye(const float3& val) { m_eye = val; }
 	void setLookat(const float3& val) { m_lookat = val; }

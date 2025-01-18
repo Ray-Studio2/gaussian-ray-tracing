@@ -22,6 +22,9 @@
 #include <chrono>
 #include <iostream>
 
+#include "GaussianTracer.h"
+#include "Camera.h"
+
 class GUI
 {
 public:
@@ -31,9 +34,22 @@ public:
 	GLFWwindow* initUI(const char* window_title, int width, int height);
 	void beginFrame();
 	void endFrame();
-	void renderPanel(std::chrono::duration<double>& state_update_time,
-					 std::chrono::duration<double>& render_time,
-					 std::chrono::duration<double>& display_time);
+	void renderGUI(
+		GaussianTracer& tracer,
+		std::chrono::duration<double>& state_update_time,
+		std::chrono::duration<double>& render_time,
+		std::chrono::duration<double>& display_time
+	);
+
+	inline void setCamera(Camera* camera) { m_camera = camera; reinitOrientationFromCamera(); }
+
+	void setMoveSpeed(const float& val) { m_moveSpeed = val; }
+	void reinitOrientationFromCamera();
+	void setReferenceFrame(const float3& u, const float3& v, const float3& w);
+
+	// Mouse tracking
+	void startTracking(int x, int y);
+	void updateTracking(int x, int y);
 
 private:
 	static void errorCallback(int error, const char* description)
@@ -41,7 +57,31 @@ private:
 		std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 	}
 
-	void displayText(std::chrono::duration<double>& state_update_time,
-					 std::chrono::duration<double>& render_time,
-					 std::chrono::duration<double>& display_time);
+	void renderPanel(GaussianTracer& tracer);
+	void displayText(
+		std::chrono::duration<double>& state_update_time,
+		std::chrono::duration<double>& render_time,
+		std::chrono::duration<double>& display_time
+	);
+
+	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
+	float degrees(float radians) { return radians * 180.0f / M_PIf; }
+
+	void updateCamera();
+
+	Camera* m_camera = nullptr;
+
+	float m_moveSpeed = 1.0f;
+	float m_cameraEyeLookatDistance = 0.0f;
+
+	int  m_prevPosX = 0;
+	int  m_prevPosY = 0;
+	bool m_tracking = false;
+
+	float m_latitude  = 0.0f;   // in radians
+	float m_longitude = 0.0f;   // in radians
+
+	float3 m_u = make_float3(0.0f, 0.0f, 0.0f);
+	float3 m_v = make_float3(0.0f, 0.0f, 0.0f);
+	float3 m_w = make_float3(0.0f, 0.0f, 0.0f);
 };

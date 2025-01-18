@@ -49,6 +49,72 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     return window;
 }
 
+void GUI::reinitOrientationFromCamera()
+{
+    m_camera->UVWFrame(m_u, m_v, m_w);
+    m_u = normalize(m_u);
+    m_v = normalize(m_v);
+    m_w = normalize(-m_w);
+    std::swap(m_v, m_w);
+    m_latitude = 0.0f;
+    m_longitude = 0.0f;
+    m_cameraEyeLookatDistance = length(m_camera->lookat() - m_camera->eye());
+	std::cout << "Camera eye-lookat distance: " << m_cameraEyeLookatDistance << std::endl;
+}
+
+void GUI::startTracking(int x, int y)
+{
+    m_prevPosX = x;
+	m_prevPosY = y;
+	m_tracking = true;
+}
+
+void GUI::updateTracking(int x, int y)
+{
+    if (!m_tracking) {
+		startTracking(x, y);
+		return;
+    }
+	
+	int deltaX = -(x - m_prevPosX);
+    int deltaY = -(y - m_prevPosY);
+
+    m_prevPosX = x;
+    m_prevPosY = y;
+    m_latitude  = radians(std::min(89.0f, std::max(-89.0f, degrees(m_latitude) + 0.5f * deltaY)));
+    m_longitude = radians(fmod(degrees(m_longitude) - 0.5f * deltaX, 360.0f));
+
+    updateCamera();
+}
+
+void GUI::updateCamera()
+{
+    // use latlon for view definition
+    float3 localDir;
+    localDir.x = cos(m_latitude) * sin(m_longitude);
+    localDir.y = cos(m_latitude) * cos(m_longitude);
+    localDir.z = sin(m_latitude);
+
+    float3 dirWS = m_u * localDir.x + m_v * localDir.y + m_w * localDir.z;
+    
+    const float3& eye = m_camera->eye();
+    m_camera->setLookat(eye - dirWS * m_cameraEyeLookatDistance);
+}
+
+void GUI::setReferenceFrame(const float3& u, const float3& v, const float3& w)
+{
+    m_u = u;
+    m_v = v;
+    m_w = w;
+    float3 dirWS = -normalize(m_camera->lookat() - m_camera->eye());
+    float3 dirLocal;
+    dirLocal.x = dot(dirWS, u);
+    dirLocal.y = dot(dirWS, v);
+    dirLocal.z = dot(dirWS, w);
+    m_longitude = atan2(dirLocal.x, dirLocal.y);
+    m_latitude = asin(dirLocal.z);
+}
+
 void GUI::beginFrame()
 {
     ImGui_ImplOpenGL3_NewFrame();
@@ -62,16 +128,50 @@ void GUI::endFrame()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void GUI::renderPanel(
+void GUI::renderGUI(
+    GaussianTracer& tracer,
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
-)
+    )
 {
-	ImGui::SetNextWindowPos(ImVec2(860, 20));       // Hardcoded position
-	ImGui::SetNextWindowSize(ImVec2(400, 200));	    // Hardcoded size
-    ImGui::Begin("Pannel");
     displayText(state_update_time, render_time, display_time);
+    renderPanel(tracer);
+}
+
+void GUI::renderPanel(GaussianTracer& tracer)
+{
+	ImGui::SetNextWindowPos(ImVec2(960, 20));
+	ImGui::SetNextWindowSize(ImVec2(300, 680));
+    ImGui::Begin("Pannel");
+
+    if (ImGui::CollapsingHeader("DEBUG"))
+	{
+        ImGui::PushItemWidth(100);
+
+		ImGui::SliderInt("Hit array size", &tracer.params.k, 1, 6);
+		ImGui::SliderFloat("Alpha min", &tracer.params.alpha_min, 0.01f, 0.2f);
+		ImGui::SliderFloat("T min", &tracer.params.T_min, 0.03f, 0.99f);
+	}
+
+    ImGui::Spacing();
+
+    if (ImGui::CollapsingHeader("Reflection"))
+    {
+		// TODO: Reflection
+		if (ImGui::Button("Add Primitive"))
+		{
+			tracer.addMirrorSphere();
+		}
+		
+        ImGui::SameLine();
+
+		const char* items[] = { "Sphere" };
+		static int item_current = 0;
+		ImGui::PushItemWidth(70);
+		ImGui::Combo("Primitive Type", &item_current, items, IM_ARRAYSIZE(items));		
+    }
+
 	ImGui::End();
 }
 
@@ -79,8 +179,12 @@ void GUI::displayText(
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
-)
+    )
 {
+    ImGui::SetNextWindowPos(ImVec2(20, 20));
+    ImGui::SetNextWindowSize(ImVec2(200, 80));
+    ImGui::Begin("FPS", 0, ImGuiWindowFlags_NoDecoration);
+
     constexpr std::chrono::duration<double> display_update_min_interval_time(0.5);
     static int32_t                          total_subframe_count = 0;
     static int32_t                          last_update_frames = 0;
@@ -107,10 +211,15 @@ void GUI::displayText(
 
         last_update_time = cur_time;
         last_update_frames = 0;
-        state_update_time = render_time = display_time = std::chrono::duration<double>::zero();
+
+        state_update_time = std::chrono::duration<double>::zero();
+        render_time       = std::chrono::duration<double>::zero();
+        display_time      = std::chrono::duration<double>::zero();
     }
 
     ++total_subframe_count;
 
     ImGui::TextColored(ImColor(0.7f, 0.7f, 0.7f, 1.0f), "%s", display_text);
+
+    ImGui::End();
 }

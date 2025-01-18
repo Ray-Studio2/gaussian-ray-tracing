@@ -29,15 +29,12 @@ public:
 	void initParams();
 	void render(CUDAOutputBuffer& output_buffer);
 	
-	void initCamera();
-	void updateCamera();
+	void updateCamera(Camera& camera, bool& camera_changed);
+
+	void addMirrorSphere();
 
 	Params	 params;
 	CUstream stream;
-
-	// Camera
-	Camera m_camera;
-	bool   m_camera_changed = true;
 
 private:
 	void createContext();
@@ -52,13 +49,16 @@ private:
 	// Gaussian data
 	GaussianData			    m_gsData;
 	std::vector<GaussianIndice> m_gsIndice;
-	size_t						vertex_count = 0;
+	size_t						vertex_count;
 	float						alpha_min;
 
 	// Optix state
-	OptixDeviceContext	   m_context;
-	OptixBuildInput		   triangle_input;
-	OptixTraversableHandle m_gas;
+	OptixDeviceContext		   m_context;
+	OptixBuildInput			   triangle_input;
+	OptixTraversableHandle	   m_gas;
+	OptixTraversableHandle	   m_ias;
+	OptixTraversableHandle	   m_root;
+	std::vector<OptixInstance> instances;
 
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;
@@ -75,4 +75,7 @@ private:
 	std::vector<unsigned int> indices;
 	CUdeviceptr               d_vertices;
 	CUdeviceptr               d_indices;
+
+	// Primitives
+	int numberMirrorSpheres = 0;
 };
