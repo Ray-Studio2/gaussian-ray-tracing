@@ -235,6 +235,10 @@ static __forceinline__ __device__ float3 trace(
               break;
           }
 
+          // Debug
+          if (prd.k_closest[i].particleIndex > params.last_gaussian_index)
+			  return make_float3(1.0f, 1.0f, 1.0f);
+
           GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
 
           float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;

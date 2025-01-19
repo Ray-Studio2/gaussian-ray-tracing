@@ -69,6 +69,7 @@ struct Params
 
 	// Debug
 	bool visualize_hitcount;
+	int  last_gaussian_index;
 };
 
 struct RayPayload
