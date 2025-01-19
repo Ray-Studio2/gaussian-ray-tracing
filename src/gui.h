@@ -69,6 +69,7 @@ private:
 
 	void updateCamera();
 
+	// Camera
 	Camera* m_camera = nullptr;
 
 	float m_moveSpeed = 1.0f;

@@ -460,14 +460,15 @@ void GaussianTracer::createSBT()
 
 void GaussianTracer::initParams()
 {
-	params.output_buffer = nullptr;
-	params.handle        = m_root;
-    params.k             = MAX_K;
-    params.t_min         = 1e-3f;
-    params.t_max         = 1e5f;
-    params.T_min         = 0.03f;
-    params.alpha_min     = alpha_min;
-    params.sh_degree_max = 0;
+	params.output_buffer      = nullptr;
+	params.handle             = m_root;
+    params.k                  = MAX_K;
+    params.t_min              = 1e-3f;
+    params.t_max              = 1e5f;
+    params.T_min              = 0.03f;
+    params.alpha_min          = alpha_min;
+    params.sh_degree_max      = 0;
+	params.visualize_hitcount = false;
 
 	GaussianParticle* particles = new GaussianParticle[vertex_count];
 	for (int i = 0; i < vertex_count; i++)
