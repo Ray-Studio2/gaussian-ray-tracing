@@ -59,7 +59,6 @@ void GUI::reinitOrientationFromCamera()
     m_latitude = 0.0f;
     m_longitude = 0.0f;
     m_cameraEyeLookatDistance = length(m_camera->lookat() - m_camera->eye());
-	std::cout << "Camera eye-lookat distance: " << m_cameraEyeLookatDistance << std::endl;
 }
 
 void GUI::startTracking(int x, int y)
@@ -158,18 +157,18 @@ void GUI::renderPanel(GaussianTracer& tracer)
 
     if (ImGui::CollapsingHeader("Reflection"))
     {
-		// TODO: Reflection
 		if (ImGui::Button("Add Primitive"))
 		{
-			tracer.addMirrorSphere();
+			if (selected_geometry == 0)
+			    tracer.addSphere();
+			else if (selected_geometry == 1)
+				tracer.addPlane();
 		}
 		
         ImGui::SameLine();
 
-		const char* items[] = { "Sphere" };
-		static int item_current = 0;
 		ImGui::PushItemWidth(70);
-		ImGui::Combo("Primitive Type", &item_current, items, IM_ARRAYSIZE(items));		
+		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
     }
 
 	ImGui::End();

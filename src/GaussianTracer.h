@@ -11,7 +11,8 @@
 #include <iostream>
 
 #include "Camera.h"
-#include "Icosahedron.h"
+#include "geometry/Icosahedron.h"
+#include "geometry/Plane.h"
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
@@ -31,7 +32,8 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	void addMirrorSphere();
+	void addSphere();
+	void addPlane();
 
 	Params	 params;
 	CUstream stream;
@@ -44,6 +46,10 @@ private:
 	void createPipeline();
 	void createSBT();
 
+	void createGaussiansAS();
+	OptixTraversableHandle createSphereAS();
+	OptixTraversableHandle createPlaneAS();
+
 	void filterGaussians();
 
 	// Gaussian data
@@ -55,8 +61,6 @@ private:
 	// Optix state
 	OptixDeviceContext		   m_context;
 	OptixBuildInput			   triangle_input;
-	OptixTraversableHandle	   m_gas;
-	OptixTraversableHandle	   m_ias;
 	OptixTraversableHandle	   m_root;
 	std::vector<OptixInstance> instances;
 
@@ -77,5 +81,6 @@ private:
 	CUdeviceptr               d_indices;
 
 	// Primitives
-	int numberMirrorSpheres = 0;
+	int numberPlanes  = 0;
+	int numberSpheres = 0;
 };
