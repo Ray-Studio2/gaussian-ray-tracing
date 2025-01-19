@@ -97,8 +97,10 @@ add_executable(
 	src/vector_math.h
 	src/CUDAOutputBuffer.h
 	src/CUDAOutputBuffer.cpp
-	src/Icosahedron.h
 	src/Utility.h
+	src/geometry/Icosahedron.h
+	src/geometry/Sphere.h
+	src/geometry/Plane.h
 	${IMGUI}
 )
 
