@@ -13,6 +13,13 @@
 #include <gtc/quaternion.hpp>
 
 #include <vector>
+#include <random>
+
+std::random_device rd;
+std::mt19937 gen(rd());
+
+std::uniform_real_distribution<float> randomPosition(-1.0f, 1.0f);
+std::uniform_real_distribution<float> randomAngle(0.0f, 1.0f * M_PI);
 
 GaussianTracer::GaussianTracer(const std::string& filename)
     : m_gsData(filename)
@@ -666,13 +673,30 @@ void GaussianTracer::addPlane()
 
 	OptixInstance instance = {};
 
-    float transform[12] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f
+    // Random position
+	float tx = randomPosition(gen);
+	float ty = randomPosition(gen);
+	float tz = randomPosition(gen);
+	glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
+
+    // Random rotation
+    float yaw   = randomAngle(gen);
+    float pitch = randomAngle(gen);
+    float roll  = randomAngle(gen);
+    glm::mat4 Ryaw   = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 Rpitch = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 Rroll  = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 rotation = Rroll * Rpitch * Ryaw;
+
+    glm::mat4 transform = translation * rotation;
+
+    float instance_transform[12] = {
+        transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+        transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+        transform[0][2], transform[1][2], transform[2][2], transform[3][2]
     };
 
-    memcpy(instance.transform, transform, sizeof(float) * 12);
+    memcpy(instance.transform, instance_transform, sizeof(float) * 12);
     instance.instanceId        = instances[instances.size() - 1].instanceId + 1;
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
@@ -682,7 +706,12 @@ void GaussianTracer::addPlane()
     instances.push_back(instance);
 
 	buildAccelationStructure();
-	params.handle = m_root;
+	updateParamsTraversableHandle();
 
 	numberPlanes++;
+}
+
+void GaussianTracer::updateParamsTraversableHandle()
+{
+	params.handle = m_root;
 }

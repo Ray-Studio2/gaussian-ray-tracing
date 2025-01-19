@@ -49,6 +49,7 @@ private:
 	void createGaussiansAS();
 	OptixTraversableHandle createSphereAS();
 	OptixTraversableHandle createPlaneAS();
+	void updateParamsTraversableHandle();
 
 	void filterGaussians();
 
