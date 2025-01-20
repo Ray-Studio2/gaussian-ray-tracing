@@ -162,10 +162,12 @@ void GUI::renderPanel(GaussianTracer& tracer)
     {
 		if (ImGui::Button("Add Primitive"))
 		{
-			if (selected_geometry == 0)
-			    tracer.addSphere();
-			else if (selected_geometry == 1)
-				tracer.addPlane();
+            if (selected_geometry == 0) {
+                tracer.createPlane();
+            }
+            else if (selected_geometry == 1) {
+                //tracer.addSphere();
+            }
 		}
 		
         ImGui::SameLine();
@@ -173,6 +175,22 @@ void GUI::renderPanel(GaussianTracer& tracer)
 		ImGui::PushItemWidth(70);
 		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
 		ImGui::PopItemWidth();
+
+		for (Primitive& p : tracer.getPrimitives())
+        {
+			std::string lbl = p.type + " " + std::to_string(p.index);
+            if (ImGui::TreeNode(lbl.c_str()))
+            {
+				ImGui::SliderFloat3("Translate", &p.position.x, -1.0f, 1.0f, "%.2f", 0.01f);
+				ImGui::SliderFloat3("Rotate", &p.rotation.x, -180.0f, 180.0f, "%.2f", 3.6f);
+				ImGui::SliderFloat3("Scale", &p.scale.x, 0.1f, 2.0f, "%.2f", 0.01f);
+
+				/*tracer.updateInstanceTransforms(p);*/
+
+				ImGui::TreePop();
+			}
+            tracer.updateInstanceTransforms(p);
+		}   
     }
 
 	ImGui::End();

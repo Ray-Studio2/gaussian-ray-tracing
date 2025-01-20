@@ -87,6 +87,6 @@ private:
 	float3 m_w = make_float3(0.0f, 0.0f, 0.0f);
 
 	// Primitives
-	const char* geometries[2] = {"Sphere", "Plane"};
+	const char* geometries[2] = { "Plane", "Sphere" };
 	int			selected_geometry = 0;
 };

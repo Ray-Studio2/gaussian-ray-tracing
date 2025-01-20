@@ -17,6 +17,16 @@
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
 
+struct Primitive
+{
+	std::string  type;
+	unsigned int index;
+	float3 		 position;	// tx, ty, tz
+	float3 		 rotation;	// yaw, pitch, roll
+	float3 		 scale;		// sx, sy, sz
+	unsigned int instance_id;
+};
+
 class GaussianTracer
 {
 public:
@@ -32,8 +42,11 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	void addSphere();
-	void addPlane();
+	//void addSphere();
+	void createPlane();
+	void updateInstanceTransforms(Primitive& p);
+
+	std::vector<Primitive>& getPrimitives() { return primitives; }
 
 	Params	 params;
 	CUstream stream;
@@ -47,11 +60,15 @@ private:
 	void createSBT();
 
 	void createGaussiansAS();
-	OptixTraversableHandle createSphereAS();
+	//OptixTraversableHandle createSphereAS();
 	OptixTraversableHandle createPlaneAS();
 	void updateParamsTraversableHandle();
 
 	void filterGaussians();
+
+	// Utility functions
+	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
+	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -82,6 +99,6 @@ private:
 	CUdeviceptr               d_indices;
 
 	// Primitives
-	int numberPlanes  = 0;
-	int numberSpheres = 0;
+	std::vector<Primitive> primitives;
+	unsigned int		   numberOfPlanes = 0;
 };
