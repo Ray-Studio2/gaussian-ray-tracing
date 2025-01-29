@@ -185,8 +185,6 @@ void GUI::renderPanel(GaussianTracer& tracer)
 				ImGui::SliderFloat3("Rotate", &p.rotation.x, -180.0f, 180.0f, "%.2f", 3.6f);
 				ImGui::SliderFloat3("Scale", &p.scale.x, 0.1f, 2.0f, "%.2f", 0.01f);
 
-				/*tracer.updateInstanceTransforms(p);*/
-
 				ImGui::TreePop();
 			}
             tracer.updateInstanceTransforms(p);
