@@ -60,7 +60,6 @@ private:
 	void createSBT();
 
 	void createGaussiansAS();
-	//OptixTraversableHandle createSphereAS();
 	OptixTraversableHandle createPlaneAS();
 	void updateParamsTraversableHandle();
 
