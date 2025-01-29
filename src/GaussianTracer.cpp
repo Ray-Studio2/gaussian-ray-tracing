@@ -602,7 +602,7 @@ void GaussianTracer::updateParamsTraversableHandle()
 
 void GaussianTracer::updateInstanceTransforms(Primitive& p)
 {
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(p.position.x, p.position.y, p.position.y));
+    glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(p.position.x, p.position.y, p.position.z));
 	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(p.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
 		                 glm::rotate(glm::mat4(1.0f), glm::radians(p.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
 		                 glm::rotate(glm::mat4(1.0f), glm::radians(p.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));

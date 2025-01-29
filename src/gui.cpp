@@ -181,9 +181,20 @@ void GUI::renderPanel(GaussianTracer& tracer)
 			std::string lbl = p.type + " " + std::to_string(p.index);
             if (ImGui::TreeNode(lbl.c_str()))
             {
-				ImGui::SliderFloat3("Translate", &p.position.x, -1.0f, 1.0f, "%.2f", 0.01f);
-				ImGui::SliderFloat3("Rotate", &p.rotation.x, -180.0f, 180.0f, "%.2f", 3.6f);
-				ImGui::SliderFloat3("Scale", &p.scale.x, 0.1f, 2.0f, "%.2f", 0.01f);
+                // Translate
+                ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
+                ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
+                ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+
+				// Rotate
+				ImGui::SliderFloat("Yaw", &p.rotation.x, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Roll", &p.rotation.z, -180.0f, 180.0f, "%.2f");
+
+                // Scale
+				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
+                ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
+                ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
 
 				ImGui::TreePop();
 			}
