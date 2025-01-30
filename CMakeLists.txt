@@ -99,11 +99,12 @@ add_executable(
 	src/CUDAOutputBuffer.cpp
 	src/Utility.h
 	src/geometry/Icosahedron.h
-	src/geometry/Sphere.h
 	src/geometry/Plane.h
 	src/geometry/Plane.cpp
+	src/geometry/Sphere.h
+	src/geometry/Sphere.cpp
 	${IMGUI}
-)
+ )
 
 target_compile_definitions(gaussain-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(gaussain-tracing glfw glad ${OPENGL_gl_LIBRARY})
