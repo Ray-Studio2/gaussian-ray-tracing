@@ -14,8 +14,6 @@ public:
 	~Plane();
 
 	void setOptixBuildInput();
-	OptixBuildInput* getOptixBuildInput() { return &plane_input; }
-	OptixAccelBuildOptions* getAccelOptions() { return &accel_options; }
 	void createTraversableHandle(OptixDeviceContext &ctx);
 	void createOptixInstance(unsigned int id, 
 							 float tx, float ty, float tz, 
