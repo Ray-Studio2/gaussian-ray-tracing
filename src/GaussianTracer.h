@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "geometry/Icosahedron.h"
 #include "geometry/Plane.h"
+#include "geometry/Sphere.h"
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
@@ -42,8 +43,8 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	//void addSphere();
 	void createPlane();
+	void createSphere();
 	void updateInstanceTransforms(Primitive& p);
 
 	std::vector<Primitive>& getPrimitives() { return primitives; }
@@ -60,7 +61,6 @@ private:
 	void createSBT();
 
 	void createGaussiansAS();
-	OptixTraversableHandle createPlaneAS();
 	void updateParamsTraversableHandle();
 
 	void filterGaussians();
@@ -99,5 +99,6 @@ private:
 
 	// Primitives
 	std::vector<Primitive> primitives;
-	unsigned int		   numberOfPlanes = 0;
+	unsigned int		   numberOfPlanes  = 0;
+	unsigned int		   numberOfSpheres = 0;
 };

@@ -582,7 +582,7 @@ void GaussianTracer::createPlane()
     numberOfPlanes++;
 
     Primitive p;
-	p.type        = "plane";
+	p.type        = "Plane";
     p.index       = numberOfPlanes;
 	p.position    = make_float3(tx, ty, tz);
 	p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
@@ -593,6 +593,47 @@ void GaussianTracer::createPlane()
 
 	buildAccelationStructure();
 	updateParamsTraversableHandle();
+}
+
+void GaussianTracer::createSphere()
+{
+    Sphere sphere = Sphere();
+
+    sphere.setOptixBuildInput();
+    sphere.createTraversableHandle(m_context);
+
+    // Primitives ID
+    unsigned int id = instances[instances.size() - 1].instanceId + 1;
+
+    // Random position
+    float tx = randomPosition(gen);
+    float ty = randomPosition(gen);
+    float tz = randomPosition(gen);
+
+    // Random rotation
+    float yaw = randomAngle(gen);
+    float pitch = randomAngle(gen);
+    float roll = randomAngle(gen);
+
+    sphere.createOptixInstance(id, tx, ty, tz, yaw, pitch, roll);
+
+    OptixInstance sphere_instance = sphere.getInstance();
+
+    instances.push_back(sphere_instance);
+    numberOfSpheres++;
+
+    Primitive p;
+    p.type        = "Sphere";
+    p.index       = numberOfSpheres;
+    p.position    = make_float3(tx, ty, tz);
+    p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
+    p.scale       = make_float3(1.0f, 1.0f, 1.0f);
+    p.instance_id = sphere_instance.instanceId;
+
+    primitives.push_back(p);
+
+    buildAccelationStructure();
+    updateParamsTraversableHandle();
 }
 
 void GaussianTracer::updateParamsTraversableHandle()

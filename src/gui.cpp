@@ -166,7 +166,7 @@ void GUI::renderPanel(GaussianTracer& tracer)
                 tracer.createPlane();
             }
             else if (selected_geometry == 1) {
-                //tracer.addSphere();
+                tracer.createSphere();
             }
 		}
 		
