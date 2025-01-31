@@ -63,6 +63,9 @@ private:
 	void createGaussiansAS();
 	void updateParamsTraversableHandle();
 
+	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
+	OptixInstance createIAS(OptixTraversableHandle const& gas);
+
 	void filterGaussians();
 
 	// Utility functions

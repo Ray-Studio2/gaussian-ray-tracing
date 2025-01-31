@@ -554,16 +554,88 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 	camera.UVWFrame(params.U, params.V, params.W);
 }
 
-void GaussianTracer::createPlane()
+OptixTraversableHandle GaussianTracer::createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is)
 {
-    Plane plane = Plane();
-    
-    plane.setOptixBuildInput();
-	plane.createTraversableHandle(m_context);
+	CUdeviceptr d_vs;
+	CUdeviceptr d_is;
 
-    // Primitives ID
-    unsigned int id = instances[instances.size() - 1].instanceId + 1;
+    const size_t vertices_size_in_bytes = vs.size() * sizeof(float3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_vs), vertices_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_vs),
+        vs.data(),
+        vertices_size_in_bytes,
+        cudaMemcpyHostToDevice
+    ));
 
+    const size_t indices_size_in_bytes = is.size() * sizeof(unsigned int);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_is), indices_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_is),
+        is.data(),
+        indices_size_in_bytes,
+        cudaMemcpyHostToDevice
+    ));
+
+    OptixBuildInput input = {};
+    input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+    input.triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
+    input.triangleArray.vertexStrideInBytes = sizeof(float3);
+    input.triangleArray.numVertices         = vs.size();
+    input.triangleArray.vertexBuffers       = &d_vs;
+
+    input.triangleArray.indexFormat        = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+    input.triangleArray.indexStrideInBytes = sizeof(unsigned int) * 3;
+    input.triangleArray.numIndexTriplets   = (unsigned int)is.size() / 3;
+    input.triangleArray.indexBuffer        = d_is;
+
+    unsigned int triangleInputFlags[1] = {};
+    input.triangleArray.flags         = triangleInputFlags;
+    input.triangleArray.numSbtRecords = 1;
+
+    OptixAccelBuildOptions accel_options = {};
+    accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
+    accel_options.operation  = OPTIX_BUILD_OPERATION_BUILD;
+
+    OptixAccelBufferSizes gas_buffer_sizes;
+    OPTIX_CHECK(optixAccelComputeMemoryUsage(
+        m_context,
+        &accel_options,
+        &input,
+        1,
+        &gas_buffer_sizes
+    ));
+
+    CUdeviceptr d_gas;
+    CUDA_CHECK(cudaMalloc((void**)&d_gas, gas_buffer_sizes.outputSizeInBytes));
+
+    CUdeviceptr d_temp_buffer;
+    CUDA_CHECK(cudaMalloc((void**)&d_temp_buffer, gas_buffer_sizes.tempSizeInBytes));
+
+    OptixTraversableHandle gas;
+    OPTIX_CHECK(optixAccelBuild(
+        m_context,
+        0,
+        &accel_options,
+        &input,
+        1,
+        d_temp_buffer,
+        gas_buffer_sizes.tempSizeInBytes,
+        d_gas,
+        gas_buffer_sizes.outputSizeInBytes,
+        &gas,
+        0,
+        0
+    ));
+
+    CUDA_CHECK(cudaStreamSynchronize(0));
+    CUDA_CHECK(cudaFree((void*)d_temp_buffer));
+
+    return gas;
+}
+
+OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas)
+{
     // Random position
     float tx = randomPosition(gen);
     float ty = randomPosition(gen);
@@ -574,22 +646,50 @@ void GaussianTracer::createPlane()
     float pitch = randomAngle(gen);
     float roll  = randomAngle(gen);
 
-	plane.createOptixInstance(id, tx, ty, tz, yaw, pitch, roll);
+    glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
 
-	OptixInstance plane_instance = plane.getInstance();
+    glm::mat4 Ryaw     = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 Rpitch   = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 Rroll    = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 rotation = Rroll * Rpitch * Ryaw;
 
-    instances.push_back(plane_instance);
-    numberOfPlanes++;
+    glm::mat4 transform = translation * rotation;
 
-    Primitive p;
-	p.type        = "Plane";
-    p.index       = numberOfPlanes;
-	p.position    = make_float3(tx, ty, tz);
-	p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
-	p.scale       = make_float3(1.0f, 1.0f, 1.0f);
-	p.instance_id = plane_instance.instanceId;
-    
-	primitives.push_back(p);
+    float instance_transform[12] = {
+        transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+        transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+        transform[0][2], transform[1][2], transform[2][2], transform[3][2]
+    };
+
+	OptixInstance instance = {};
+	memcpy(instance.transform, instance_transform, sizeof(float) * 12);
+    instance.instanceId        = instances[instances.size() - 1].instanceId + 1;
+    instance.visibilityMask    = 255;
+    instance.sbtOffset         = 0;
+    instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
+    instance.traversableHandle = gas;
+	return instance;
+}
+
+void GaussianTracer::createPlane()
+{
+    Plane plane = Plane();
+
+	OptixTraversableHandle gas = createGAS(plane.getVertices(), plane.getIndices());
+    OptixInstance          ias = createIAS(gas);
+
+	instances.push_back(ias);
+ //   numberOfPlanes++;
+
+ //   Primitive p;
+	//p.type        = "Plane";
+ //   p.index       = numberOfPlanes;
+	//p.position    = make_float3(tx, ty, tz);
+	//p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
+	//p.scale       = make_float3(1.0f, 1.0f, 1.0f);
+	//p.instance_id = plane_instance.instanceId;
+ //   
+	//primitives.push_back(p);
 
 	buildAccelationStructure();
 	updateParamsTraversableHandle();
@@ -599,42 +699,30 @@ void GaussianTracer::createSphere()
 {
     Sphere sphere = Sphere();
 
-    sphere.setOptixBuildInput();
-    sphere.createTraversableHandle(m_context);
+	OptixTraversableHandle gas = createGAS(sphere.getVertices(), sphere.getIndices());
+	OptixInstance          ias = createIAS(gas);
 
-    // Primitives ID
-    unsigned int id = instances[instances.size() - 1].instanceId + 1;
-
-    // Random position
-    float tx = randomPosition(gen);
-    float ty = randomPosition(gen);
-    float tz = randomPosition(gen);
-
-    // Random rotation
-    float yaw = randomAngle(gen);
-    float pitch = randomAngle(gen);
-    float roll = randomAngle(gen);
-
-    sphere.createOptixInstance(id, tx, ty, tz, yaw, pitch, roll);
-
-    OptixInstance sphere_instance = sphere.getInstance();
-
-    instances.push_back(sphere_instance);
-    numberOfSpheres++;
-
-    Primitive p;
-    p.type        = "Sphere";
-    p.index       = numberOfSpheres;
-    p.position    = make_float3(tx, ty, tz);
-    p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
-    p.scale       = make_float3(1.0f, 1.0f, 1.0f);
-    p.instance_id = sphere_instance.instanceId;
-
-    primitives.push_back(p);
+	instances.push_back(ias);
 
     buildAccelationStructure();
     updateParamsTraversableHandle();
 }
+
+//void GaussianTracer::createSphere()
+//{
+//    Primitive p;
+//    p.type        = "Sphere";
+//    p.index       = numberOfSpheres;
+//    p.position    = make_float3(tx, ty, tz);
+//    p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
+//    p.scale       = make_float3(1.0f, 1.0f, 1.0f);
+//    p.instance_id = sphere_instance.instanceId;
+//
+//    primitives.push_back(p);
+//
+//    buildAccelationStructure();
+//    updateParamsTraversableHandle();
+//}
 
 void GaussianTracer::updateParamsTraversableHandle()
 {
