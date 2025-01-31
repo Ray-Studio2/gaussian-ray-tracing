@@ -8,7 +8,7 @@
 class Sphere
 {
 public:
-	Sphere();
+	Sphere() { createSphere(); }
 	~Sphere() {}
 
 	std::vector<float3>& getVertices() { return vertices; }
