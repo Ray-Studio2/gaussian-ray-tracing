@@ -154,57 +154,103 @@ static __forceinline__ __device__ float3 trace(
 
     prd.hit_count = 0;
 
+    if (params.visualize_hitcount) {
+        for (int i = 0; i < params.k; i++) {
+            prd.k_closest[i].t = params.t_max;
+            prd.k_closest[i].particleIndex = -1;
+        }
+
+        uint32_t u0, u1;
+        packPointer(&prd, u0, u1);
+
+        optixTrace(
+            handle,
+            ray_origin,
+            ray_direction,
+            t_curr,
+            params.t_max,
+            0.0f,
+            OptixVisibilityMask(1),
+            OPTIX_RAY_FLAG_NONE,
+            RAY_TYPE_RADIANCE,        // SBT offset
+            RAY_TYPE_COUNT,           // SBT stride
+            RAY_TYPE_RADIANCE,        // missSBTIndex
+            u0, u1
+        );
+
+        if (prd.hit_count == 0)
+            return make_float3(0, 0, 0);
+        else if (prd.hit_count < 20)
+            return make_float3(0.5, 0.5, 0);
+        else if (prd.hit_count < 40)
+            return make_float3(0.5, 0, 0.5);
+        else if (prd.hit_count < 60)
+            return make_float3(0, 0.5, 0.5);
+        else if (prd.hit_count < 80)
+            return make_float3(0.5, 0, 0);
+        else if (prd.hit_count < 100)
+            return make_float3(0, 0.5, 0);
+        else if (prd.hit_count < 150)
+            return make_float3(0, 0, 0.5);
+
+        return make_float3(0.5, 0.5, 0.5);
+    }
+
     unsigned int step = 0;
 
     while (params.T_min < T && t_curr < params.t_max)
     {
-       for (int i = 0; i < params.k; i++)
-       {
-           prd.k_closest[i].t = params.t_max;
-           prd.k_closest[i].particleIndex = -1;
-       }
+      for (int i = 0; i < params.k; i++)
+      {
+          prd.k_closest[i].t = params.t_max;
+          prd.k_closest[i].particleIndex = -1;
+      }
 
-       uint32_t u0, u1;
-       packPointer(&prd, u0, u1);
+      uint32_t u0, u1;
+      packPointer(&prd, u0, u1);
 
-       optixTrace(
-           handle,
-           ray_origin,
-           ray_direction,
-           t_curr,
-           params.t_max,
-           0.0f,
-           OptixVisibilityMask(1),
-           OPTIX_RAY_FLAG_NONE,
-           // rayFlags,
-           RAY_TYPE_RADIANCE,        // SBT offset
-           RAY_TYPE_COUNT,           // SBT stride
-           RAY_TYPE_RADIANCE,        // missSBTIndex
-           u0, u1
-       );
+      optixTrace(
+          handle,
+          ray_origin,
+          ray_direction,
+          t_curr,
+          params.t_max,
+          0.0f,
+          OptixVisibilityMask(1),
+          OPTIX_RAY_FLAG_NONE,
+          // rayFlags,
+          RAY_TYPE_RADIANCE,        // SBT offset
+          RAY_TYPE_COUNT,           // SBT stride
+          RAY_TYPE_RADIANCE,        // missSBTIndex
+          u0, u1
+      );
 
-       t_curr = prd.k_closest[params.k - 1].t + epsilon;
+      t_curr = prd.k_closest[params.k - 1].t + epsilon;
 
-       for (int i = 0; i < params.k; i++)
-       {
-           if (prd.k_closest[i].particleIndex == -1)
-           {
-               t_curr = params.t_max;
-               break;
-           }
+      for (int i = 0; i < params.k; i++)
+      {
+          if (prd.k_closest[i].particleIndex == -1)
+          {
+              t_curr = params.t_max;
+              break;
+          }
 
-           GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
+          // Debug
+          if (prd.k_closest[i].particleIndex > params.last_gaussian_index)
+			  return make_float3(1.0f, 1.0f, 1.0f);
 
-           float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;
+          GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
 
-           if (params.alpha_min < alpha_hit)
-           {
-               float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
+          float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;
 
-               L += T * alpha_hit * L_hit;
-               T *= 1.0f - alpha_hit;
-           }
-       }
+          if (params.alpha_min < alpha_hit)
+          {
+              float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
+
+              L += T * alpha_hit * L_hit;
+              T *= 1.0f - alpha_hit;
+          }
+      }
     }
 
     return make_float3(L.x, L.y, L.z);

@@ -11,10 +11,22 @@
 #include <iostream>
 
 #include "Camera.h"
-#include "Icosahedron.h"
+#include "geometry/Icosahedron.h"
+#include "geometry/Plane.h"
+#include "geometry/Sphere.h"
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
+
+struct Primitive
+{
+	std::string  type;
+	unsigned int index;
+	float3 		 position;	// tx, ty, tz
+	float3 		 rotation;	// yaw, pitch, roll
+	float3 		 scale;		// sx, sy, sz
+	unsigned int instance_id;
+};
 
 class GaussianTracer
 {
@@ -31,7 +43,11 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	void addMirrorSphere();
+	void createPlane();
+	void createSphere();
+	void updateInstanceTransforms(Primitive& p);
+
+	std::vector<Primitive>& getPrimitives() { return primitives; }
 
 	Params	 params;
 	CUstream stream;
@@ -44,7 +60,17 @@ private:
 	void createPipeline();
 	void createSBT();
 
+	void createGaussiansAS();
+	void updateParamsTraversableHandle();
+
+	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
+	OptixInstance createIAS(OptixTraversableHandle const& gas);
+
 	void filterGaussians();
+
+	// Utility functions
+	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
+	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -55,8 +81,6 @@ private:
 	// Optix state
 	OptixDeviceContext		   m_context;
 	OptixBuildInput			   triangle_input;
-	OptixTraversableHandle	   m_gas;
-	OptixTraversableHandle	   m_ias;
 	OptixTraversableHandle	   m_root;
 	std::vector<OptixInstance> instances;
 
@@ -77,5 +101,7 @@ private:
 	CUdeviceptr               d_indices;
 
 	// Primitives
-	int numberMirrorSpheres = 0;
+	std::vector<Primitive> primitives;
+	unsigned int		   numberOfPlanes  = 0;
+	unsigned int		   numberOfSpheres = 0;
 };

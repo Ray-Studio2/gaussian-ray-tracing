@@ -59,7 +59,6 @@ void GUI::reinitOrientationFromCamera()
     m_latitude = 0.0f;
     m_longitude = 0.0f;
     m_cameraEyeLookatDistance = length(m_camera->lookat() - m_camera->eye());
-	std::cout << "Camera eye-lookat distance: " << m_cameraEyeLookatDistance << std::endl;
 }
 
 void GUI::startTracking(int x, int y)
@@ -152,24 +151,55 @@ void GUI::renderPanel(GaussianTracer& tracer)
 		ImGui::SliderInt("Hit array size", &tracer.params.k, 1, 6);
 		ImGui::SliderFloat("Alpha min", &tracer.params.alpha_min, 0.01f, 0.2f);
 		ImGui::SliderFloat("T min", &tracer.params.T_min, 0.03f, 0.99f);
+        ImGui::Checkbox("Visualize hit count", &tracer.params.visualize_hitcount);
+
+        ImGui::PopItemWidth();
 	}
 
     ImGui::Spacing();
 
     if (ImGui::CollapsingHeader("Reflection"))
     {
-		// TODO: Reflection
 		if (ImGui::Button("Add Primitive"))
 		{
-			tracer.addMirrorSphere();
+            if (selected_geometry == 0) {
+                tracer.createPlane();
+            }
+            else if (selected_geometry == 1) {
+                tracer.createSphere();
+            }
 		}
 		
         ImGui::SameLine();
 
-		const char* items[] = { "Sphere" };
-		static int item_current = 0;
 		ImGui::PushItemWidth(70);
-		ImGui::Combo("Primitive Type", &item_current, items, IM_ARRAYSIZE(items));		
+		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
+		ImGui::PopItemWidth();
+
+		for (Primitive& p : tracer.getPrimitives())
+        {
+			std::string lbl = p.type + " " + std::to_string(p.index);
+            if (ImGui::TreeNode(lbl.c_str()))
+            {
+                // Translate
+                ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
+                ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
+                ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+
+				// Rotate
+				ImGui::SliderFloat("Yaw", &p.rotation.x, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Roll", &p.rotation.z, -180.0f, 180.0f, "%.2f");
+
+                // Scale
+				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
+                ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
+                ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
+
+				ImGui::TreePop();
+			}
+            tracer.updateInstanceTransforms(p);
+		}   
     }
 
 	ImGui::End();

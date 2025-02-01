@@ -66,6 +66,10 @@ struct Params
 
 	OptixTraversableHandle handle;
 	GaussianParticle* d_particles;
+
+	// Debug
+	bool visualize_hitcount;
+	int  last_gaussian_index;
 };
 
 struct RayPayload
