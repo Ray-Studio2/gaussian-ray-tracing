@@ -128,7 +128,7 @@ void GUI::endFrame()
 }
 
 void GUI::renderGUI(
-    GaussianTracer& tracer,
+    GaussianTracer* tracer,
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
@@ -138,7 +138,7 @@ void GUI::renderGUI(
     renderPanel(tracer);
 }
 
-void GUI::renderPanel(GaussianTracer& tracer)
+void GUI::renderPanel(GaussianTracer* tracer)
 {
 	ImGui::SetNextWindowPos(ImVec2(960, 20));
 	ImGui::SetNextWindowSize(ImVec2(300, 680));
@@ -148,10 +148,10 @@ void GUI::renderPanel(GaussianTracer& tracer)
 	{
         ImGui::PushItemWidth(100);
 
-		ImGui::SliderInt("Hit array size", &tracer.params.k, 1, 6);
-		ImGui::SliderFloat("Alpha min", &tracer.params.alpha_min, 0.01f, 0.2f);
-		ImGui::SliderFloat("T min", &tracer.params.T_min, 0.03f, 0.99f);
-        ImGui::Checkbox("Visualize hit count", &tracer.params.visualize_hitcount);
+		ImGui::SliderInt("Hit array size", &tracer->params.k, 1, 6);
+		ImGui::SliderFloat("Alpha min", &tracer->params.alpha_min, 0.01f, 0.2f);
+		ImGui::SliderFloat("T min", &tracer->params.T_min, 0.03f, 0.99f);
+        ImGui::Checkbox("Visualize hit count", &tracer->params.visualize_hitcount);
 
         ImGui::PopItemWidth();
 	}
@@ -163,10 +163,10 @@ void GUI::renderPanel(GaussianTracer& tracer)
 		if (ImGui::Button("Add Primitive"))
 		{
             if (selected_geometry == 0) {
-                tracer.createPlane();
+                tracer->createPlane();
             }
             else if (selected_geometry == 1) {
-                tracer.createSphere();
+                tracer->createSphere();
             }
 		}
 		
@@ -176,30 +176,34 @@ void GUI::renderPanel(GaussianTracer& tracer)
 		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
 		ImGui::PopItemWidth();
 
-		for (Primitive& p : tracer.getPrimitives())
+        for (Primitive& p : tracer->getPrimitives())
         {
 			std::string lbl = p.type + " " + std::to_string(p.index);
-            if (ImGui::TreeNode(lbl.c_str()))
-            {
-                // Translate
-                ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+			if (ImGui::TreeNode(lbl.c_str()))
+			{
+				// Translate
+                ImGui::Text("Translate:");
+				ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
+				ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
+				ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
 
 				// Rotate
+				ImGui::Text("Rotate:");
 				ImGui::SliderFloat("Yaw", &p.rotation.x, -180.0f, 180.0f, "%.2f");
 				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
 				ImGui::SliderFloat("Roll", &p.rotation.z, -180.0f, 180.0f, "%.2f");
 
-                // Scale
+				// Scale
+				ImGui::Text("Scale:");
 				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
-                ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
-                ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
+				ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
+				ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
 
-				ImGui::TreePop();
+                ImGui::TreePop();
 			}
-            tracer.updateInstanceTransforms(p);
-		}   
+
+            tracer->updateInstanceTransforms(p);
+        }
     }
 
 	ImGui::End();

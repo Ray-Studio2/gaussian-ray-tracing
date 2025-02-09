@@ -20,18 +20,18 @@
 
 struct Primitive
 {
-	std::string  type;
-	unsigned int index;
-	float3 		 position;	// tx, ty, tz
-	float3 		 rotation;	// yaw, pitch, roll
-	float3 		 scale;		// sx, sy, sz
-	unsigned int instance_id;
+	std::string			   type;
+	unsigned int		   index;
+	float3 				   position;	// tx, ty, tz
+	float3 				   rotation;	// yaw, pitch, roll
+	float3 				   scale;		// sx, sy, sz
+	size_t				   instanceIndex;
+	OptixTraversableHandle gas;
 };
 
 class GaussianTracer
 {
 public:
-
 	GaussianTracer(const std::string& filename);
 	~GaussianTracer();
 
@@ -50,7 +50,7 @@ public:
 	std::vector<Primitive>& getPrimitives() { return primitives; }
 
 	Params	 params;
-	CUstream stream;
+	CUstream stream;	
 
 private:
 	void createContext();
@@ -64,13 +64,11 @@ private:
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
-	OptixInstance createIAS(OptixTraversableHandle const& gas);
+	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
+
+	void updateSBT();
 
 	void filterGaussians();
-
-	// Utility functions
-	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
-	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -88,7 +86,7 @@ private:
 	OptixPipelineCompileOptions pipeline_compile_options;
 	OptixProgramGroup           raygen_prog_group;
 	OptixProgramGroup           miss_prog_group;
-	OptixProgramGroup           anyhit_prog_group;
+	OptixProgramGroup           hit_prog_group;
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
@@ -104,4 +102,7 @@ private:
 	std::vector<Primitive> primitives;
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;
+
+	// Test
+	size_t numberOfGeometries = 0;
 };

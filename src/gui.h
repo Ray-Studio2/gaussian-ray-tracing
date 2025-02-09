@@ -35,7 +35,7 @@ public:
 	void beginFrame();
 	void endFrame();
 	void renderGUI(
-		GaussianTracer& tracer,
+		GaussianTracer* tracer,
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
 		std::chrono::duration<double>& display_time
@@ -57,7 +57,7 @@ private:
 		std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 	}
 
-	void renderPanel(GaussianTracer& tracer);
+	void renderPanel(GaussianTracer* tracer);
 	void displayText(
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
