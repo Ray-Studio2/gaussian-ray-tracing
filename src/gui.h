@@ -89,4 +89,24 @@ private:
 	// Primitives
 	const char* geometries[2] = { "Plane", "Sphere" };
 	int			selected_geometry = 0;
+
+	// Transform flags
+	bool updated_tx          = false;
+	bool updated_ty          = false;
+	bool updated_tz          = false;
+	bool updated_yaw         = false;
+	bool updated_pitch       = false;
+	bool updated_roll        = false;
+	bool updated_sx          = false;
+	bool updated_sy          = false;
+	bool updated_sz          = false;
+	bool updated_translation = false;
+	bool updated_rotation    = false;
+	bool updated_scale       = false;
+
+	// Remove flag
+	bool remove_primitive             = false;
+	std::string remove_primitive_type = "";
+	size_t remove_instance_index      = 0;
+	size_t remove_primitive_index     = 0;
 };

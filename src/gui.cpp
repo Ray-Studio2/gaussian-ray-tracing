@@ -177,32 +177,57 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		ImGui::PopItemWidth();
 
         for (Primitive& p : tracer->getPrimitives())
+        //auto& primitives = tracer->getPrimitives();
+        //for (int i = primitives.size() - 1; i > 0; --i)
         {
+			//Primitive& p = primitives[i];
+
 			std::string lbl = p.type + " " + std::to_string(p.index);
 			if (ImGui::TreeNode(lbl.c_str()))
 			{
 				// Translate
                 ImGui::Text("Translate:");
-				ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
-				ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
-				ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+				updated_tx = ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
+				updated_ty = ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
+				updated_tz = ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+				updated_translation = updated_tx || updated_ty || updated_tz;
 
 				// Rotate
 				ImGui::Text("Rotate:");
-				ImGui::SliderFloat("Yaw", &p.rotation.x, -180.0f, 180.0f, "%.2f");
-				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
-				ImGui::SliderFloat("Roll", &p.rotation.z, -180.0f, 180.0f, "%.2f");
+				updated_yaw   = ImGui::SliderFloat("Yaw",   &p.rotation.x, -180.0f, 180.0f, "%.2f");
+				updated_pitch = ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
+				updated_roll  = ImGui::SliderFloat("Roll",  &p.rotation.z, -180.0f, 180.0f, "%.2f");
+				updated_rotation = updated_yaw || updated_pitch || updated_roll;
 
 				// Scale
 				ImGui::Text("Scale:");
-				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
-				ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
-				ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
+				updated_sx = ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
+				updated_sy = ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
+				updated_sz = ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
+				updated_scale = updated_sx || updated_sy || updated_sz;
+
+                // Remove primitive
+                if (ImGui::Button("Remove"))
+                {
+					remove_primitive_type  = p.type;
+					remove_primitive_index = p.index;
+					remove_instance_index  = p.instanceIndex;
+                    remove_primitive       = true;
+                }
 
                 ImGui::TreePop();
 			}
 
-            tracer->updateInstanceTransforms(p);
+            if (updated_translation || updated_rotation || updated_scale)
+            {
+                tracer->updateInstanceTransforms(p);
+            }
+        }
+
+        if (remove_primitive)
+        {
+            tracer->removePrimitive(remove_primitive_type, remove_primitive_index, remove_instance_index);
+            remove_primitive = false;
         }
     }
 

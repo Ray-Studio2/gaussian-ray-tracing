@@ -179,7 +179,7 @@ void GaussianTracer::createGaussiansAS()
         triangle_inputs[i].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
 
-    numberOfGeometries = m_gsIndice.size();
+    //numberOfGeometries = m_gsIndice.size();
 
     OptixAccelBuildOptions accel_options = {};
     accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
@@ -686,8 +686,7 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 	memcpy(instance.transform, instance_transform, sizeof(float) * 12);
     instance.instanceId        = 0;
     instance.visibilityMask    = 255;
-    //instance.sbtOffset         = 0;
-	instance.sbtOffset = m_gsIndice.size();
+    instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
     instance.traversableHandle = gas;
 
@@ -708,15 +707,14 @@ void GaussianTracer::createPlane()
 
     Primitive p;
     p.type          = "Plane";
-    p.index         = ++numberOfPlanes;
+    p.index         = numberOfPlanes++;
     p.position      = plane.getPosition();
     p.rotation      = plane.getRotation();
     p.scale         = plane.getScale();
     p.instanceIndex = instances.size() - 1;
 	p.gas           = gas;
-    primitives.push_back(p);
 
-    //updateSBT();
+    primitives.push_back(p);
 }
 
 void GaussianTracer::createSphere()
@@ -733,15 +731,63 @@ void GaussianTracer::createSphere()
 
     Primitive p;
     p.type          = "Sphere";
-    p.index         = ++numberOfSpheres;
+    p.index         = numberOfSpheres++;
     p.position      = sphere.getPosition();
     p.rotation      = sphere.getRotation();
     p.scale         = sphere.getScale();
     p.instanceIndex = instances.size() - 1;
 	p.gas           = gas;
-    primitives.push_back(p);
 
-    //updateSBT();
+    primitives.push_back(p);
+}
+
+void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex)
+{
+    if (primitives.size() == 0)
+        return;
+
+	//primitives.erase(primitives.begin() + primitiveIndex);
+	removeAndupdatePrimitives(primitiveType, primitiveIndex);
+
+    // TODO: Check "> 2" cases
+    if (instanceIndex >= instances.size())
+        instanceIndex--;
+    instances.erase(instances.begin() + instanceIndex);
+
+    buildAccelationStructure();
+    updateParamsTraversableHandle();
+}
+
+void GaussianTracer::removeAndupdatePrimitives(std::string primitiveType, size_t primitiveIndex)
+{
+	if (primitiveType == "Plane")
+		numberOfPlanes--;
+	else if (primitiveType == "Sphere")
+		numberOfSpheres--;
+
+    primitives.erase(
+        std::remove_if(primitives.begin(), primitives.end(),
+            [primitiveType, primitiveIndex](const Primitive& p) {
+                return (p.type == primitiveType) && (p.index == primitiveIndex);
+            }
+        ),
+        primitives.end()
+    );
+
+    // TODO: Check "> 2" cases
+    for (int i = 0; i < primitives.size(); i++)
+    {
+		Primitive p = primitives[i];
+
+        if (p.type == primitiveType)
+        {
+            size_t curr_index = p.index;
+			if (curr_index > primitiveIndex)
+			{
+				primitives[i].index = curr_index - 1;
+			}
+        }
+    }
 }
 
 //void GaussianTracer::updateSBT()

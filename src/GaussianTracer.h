@@ -21,7 +21,7 @@
 struct Primitive
 {
 	std::string			   type;
-	unsigned int		   index;
+	size_t				   index;
 	float3 				   position;	// tx, ty, tz
 	float3 				   rotation;	// yaw, pitch, roll
 	float3 				   scale;		// sx, sy, sz
@@ -48,6 +48,7 @@ public:
 	void updateInstanceTransforms(Primitive& p);
 
 	std::vector<Primitive>& getPrimitives() { return primitives; }
+	void removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex);
 
 	Params	 params;
 	CUstream stream;	
@@ -69,6 +70,7 @@ private:
 	void updateSBT();
 
 	void filterGaussians();
+	void removeAndupdatePrimitives(std::string primitiveType, size_t primitiveIndex);
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -102,7 +104,4 @@ private:
 	std::vector<Primitive> primitives;
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;
-
-	// Test
-	size_t numberOfGeometries = 0;
 };
