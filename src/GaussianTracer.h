@@ -70,7 +70,6 @@ private:
 	void updateSBT();
 
 	void filterGaussians();
-	void removeAndupdatePrimitives(std::string primitiveType, size_t primitiveIndex);
 
 	// Gaussian data
 	GaussianData			    m_gsData;

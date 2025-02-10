@@ -746,48 +746,34 @@ void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitive
     if (primitives.size() == 0)
         return;
 
-	//primitives.erase(primitives.begin() + primitiveIndex);
-	removeAndupdatePrimitives(primitiveType, primitiveIndex);
-
-    // TODO: Check "> 2" cases
-    if (instanceIndex >= instances.size())
-        instanceIndex--;
-    instances.erase(instances.begin() + instanceIndex);
-
-    buildAccelationStructure();
-    updateParamsTraversableHandle();
-}
-
-void GaussianTracer::removeAndupdatePrimitives(std::string primitiveType, size_t primitiveIndex)
-{
-	if (primitiveType == "Plane")
-		numberOfPlanes--;
-	else if (primitiveType == "Sphere")
-		numberOfSpheres--;
+    if (instanceIndex < instances.size()) {
+        instances.erase(instances.begin() + instanceIndex);
+    }
 
     primitives.erase(
         std::remove_if(primitives.begin(), primitives.end(),
             [primitiveType, primitiveIndex](const Primitive& p) {
                 return (p.type == primitiveType) && (p.index == primitiveIndex);
-            }
-        ),
+            }),
         primitives.end()
     );
 
-    // TODO: Check "> 2" cases
-    for (int i = 0; i < primitives.size(); i++)
-    {
-		Primitive p = primitives[i];
-
-        if (p.type == primitiveType)
-        {
-            size_t curr_index = p.index;
-			if (curr_index > primitiveIndex)
-			{
-				primitives[i].index = curr_index - 1;
-			}
+    for (auto& p : primitives) {
+        if (p.index > primitiveIndex) {
+            p.index -= 1;
+            if (p.instanceIndex > instanceIndex) {
+                p.instanceIndex -= 1;
+            }
         }
     }
+
+    if (primitiveType == "Plane")
+        numberOfPlanes--;
+    else if (primitiveType == "Sphere")
+        numberOfSpheres--;
+
+    buildAccelationStructure();
+    updateParamsTraversableHandle();
 }
 
 //void GaussianTracer::updateSBT()
