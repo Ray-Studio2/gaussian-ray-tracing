@@ -516,7 +516,6 @@ void GaussianTracer::initParams()
     params.alpha_min          = alpha_min;
     params.sh_degree_max      = 0;
 	params.visualize_hitcount = false;
-	//params.last_gaussian_index = m_gsIndice[m_gsIndice.size() - 1].index;
 
 	GaussianParticle* particles = new GaussianParticle[vertex_count];
 	for (int i = 0; i < vertex_count; i++)
