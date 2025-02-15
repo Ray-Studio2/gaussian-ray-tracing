@@ -77,7 +77,7 @@ void initCamera()
 
 int main() 
 {
-	const std::string filename = "../../data/train.ply";
+	const std::string filename = "../../data/test.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = 1280;
@@ -137,7 +137,7 @@ int main()
 		t0 = t1;
 
 		gui.beginFrame();
-		gui.renderGUI(tracer, state_update_time, render_time, display_time);
+		gui.renderGUI(&tracer, state_update_time, render_time, display_time);
 		gui.endFrame();
 
 		glfwSwapBuffers(window);

@@ -29,8 +29,7 @@ enum RayType
 };
 
 struct RayGenData { };
-struct AnyHitData { };
-struct MissData { };
+struct MissData   { };
 
 template <typename T>
 struct Record
@@ -69,20 +68,23 @@ struct Params
 
 	// Debug
 	bool visualize_hitcount;
-	int  last_gaussian_index;
 };
 
 struct RayPayload
 {
 	HitInfo      k_closest[MAX_K + 1];
 	unsigned int hit_count;
+
+	// Debug
+	int isReflectionObject;
 };
 
 struct GaussianIndice
 {
 	size_t index;
+	int   isGaussian;
 };
 
-typedef Record<RayGenData> RayGenRecord;
-typedef Record<MissData>   MissRecord;
-typedef Record<GaussianIndice> AnyHitRecord;
+typedef Record<RayGenData>     RayGenRecord;
+typedef Record<MissData>	   MissRecord;
+typedef Record<GaussianIndice> HitRecord;

@@ -35,7 +35,7 @@ public:
 	void beginFrame();
 	void endFrame();
 	void renderGUI(
-		GaussianTracer& tracer,
+		GaussianTracer* tracer,
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
 		std::chrono::duration<double>& display_time
@@ -57,7 +57,7 @@ private:
 		std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 	}
 
-	void renderPanel(GaussianTracer& tracer);
+	void renderPanel(GaussianTracer* tracer);
 	void displayText(
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
@@ -89,4 +89,24 @@ private:
 	// Primitives
 	const char* geometries[2] = { "Plane", "Sphere" };
 	int			selected_geometry = 0;
+
+	// Transform flags
+	bool updated_tx          = false;
+	bool updated_ty          = false;
+	bool updated_tz          = false;
+	bool updated_yaw         = false;
+	bool updated_pitch       = false;
+	bool updated_roll        = false;
+	bool updated_sx          = false;
+	bool updated_sy          = false;
+	bool updated_sz          = false;
+	bool updated_translation = false;
+	bool updated_rotation    = false;
+	bool updated_scale       = false;
+
+	// Remove flag
+	bool remove_primitive             = false;
+	std::string remove_primitive_type = "";
+	size_t remove_instance_index      = 0;
+	size_t remove_primitive_index     = 0;
 };
