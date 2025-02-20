@@ -49,7 +49,6 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	void createReflectionPrimitive();
 	void createPlane();
 	void createSphere();
 	void updateInstanceTransforms(Primitive& p);
@@ -63,6 +62,7 @@ public:
 private:
 	void createContext();
 	void buildAccelationStructure();
+	void buildReflectionAccelationStructure();
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
@@ -71,12 +71,8 @@ private:
 	void createGaussiansAS();
 	void updateParamsTraversableHandle();
 
-	OptixBuildInput createBuildInput();
-
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
-
-	void updateSBT();
 
 	void filterGaussians();
 
@@ -100,6 +96,10 @@ private:
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
+	// Reflection optix
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle	   reflection_ias = 0;
+
 	Params* d_params;
 
 	// Geometry
@@ -109,9 +109,6 @@ private:
 	CUdeviceptr               d_indices;
 
 	// Reflection Primitives
-	std::vector<OptixBuildInput> reflection_inputs;
-
-
 	std::vector<Primitive> primitives;
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;

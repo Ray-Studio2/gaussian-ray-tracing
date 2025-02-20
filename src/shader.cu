@@ -153,6 +153,9 @@ static __forceinline__ __device__ float3 trace(
     const  float epsilon = 1e-4f;
 
     prd.hit_count = 0;
+	prd.hit_reflection_primitive = false;
+
+	float T_max = params.t_max;
 
     if (params.visualize_hitcount) {
         for (int i = 0; i < params.k; i++) {
@@ -198,59 +201,82 @@ static __forceinline__ __device__ float3 trace(
 
     unsigned int step = 0;
 
-    while (params.T_min < T && t_curr < params.t_max)
+    uint32_t u0, u1;
+    packPointer(&prd, u0, u1);
+
+    optixTrace(
+        params.reflection_handle,
+        ray_origin,
+        ray_direction,
+        t_curr,
+        params.t_max,
+        0.0f,
+        OptixVisibilityMask(1),
+        OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+        RAY_TYPE_RADIANCE,        // SBT offset
+        RAY_TYPE_COUNT,           // SBT stride
+        RAY_TYPE_RADIANCE,        // missSBTIndex
+        u0, u1
+    );
+
+	if (prd.hit_reflection_primitive) {
+		//return make_float3(1.0f, 0.5f, 0.5f);
+		L = make_float3(1.0f, 0.5f, 0.5f);
+		T_max = prd.t_hit_reflection;
+	}
+
+    //while (params.T_min < T && t_curr < params.t_max)
+    while (params.T_min < T && t_curr < T_max)
     {
-      for (int i = 0; i < params.k; i++)
-      {
-          prd.k_closest[i].t = params.t_max;
-          prd.k_closest[i].particleIndex = -1;
-      }
+        for (int i = 0; i < params.k; i++)
+        {
+            /*prd.k_closest[i].t = params.t_max;*/
+            prd.k_closest[i].t = T_max;
+            prd.k_closest[i].particleIndex = -1;
+        }
 
-      uint32_t u0, u1;
-      packPointer(&prd, u0, u1);
+        uint32_t u0, u1;
+        packPointer(&prd, u0, u1);
 
-      optixTrace(
-          handle,
-          ray_origin,
-          ray_direction,
-          t_curr,
-          params.t_max,
-          0.0f,
-          OptixVisibilityMask(1),
-          OPTIX_RAY_FLAG_NONE,
-          // rayFlags,
-          RAY_TYPE_RADIANCE,        // SBT offset
-          RAY_TYPE_COUNT,           // SBT stride
-          RAY_TYPE_RADIANCE,        // missSBTIndex
-          u0, u1
-      );
+        optixTrace(
+            handle,
+            ray_origin,
+            ray_direction,
+            t_curr,
+            params.t_max,
+            0.0f,
+            OptixVisibilityMask(1),
+            //OPTIX_RAY_FLAG_NONE,
+            OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+            RAY_TYPE_RADIANCE,        // SBT offset
+            RAY_TYPE_COUNT,           // SBT stride
+            RAY_TYPE_RADIANCE,        // missSBTIndex
+            u0, u1
+        );
 
-      t_curr = prd.k_closest[params.k - 1].t + epsilon;
+        t_curr = prd.k_closest[params.k - 1].t + epsilon;
 
-      for (int i = 0; i < params.k; i++)
-      {
-          if (prd.k_closest[i].particleIndex == -1)
-          {
-              t_curr = params.t_max;
-              break;
-          }
+        for (int i = 0; i < params.k; i++)
+        {
+            if (prd.k_closest[i].particleIndex == -1)
+            {
+                /*t_curr = params.t_max;*/
+                t_curr = T_max;
+                break;
+            }
 
-          // Debug
-          if (prd.k_closest[i].particleIndex > params.last_gaussian_index)
-			  return make_float3(1.0f, 1.0f, 1.0f);
+            GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
 
-          GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
+            float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;
 
-          float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;
+            if (params.alpha_min < alpha_hit)
+            {
+                float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
 
-          if (params.alpha_min < alpha_hit)
-          {
-              float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
-
-              L += T * alpha_hit * L_hit;
-              T *= 1.0f - alpha_hit;
-          }
-      }
+                L += T * alpha_hit * L_hit;
+                T *= 1.0f - alpha_hit;
+            }
+        }
     }
 
     return make_float3(L.x, L.y, L.z);
@@ -296,7 +322,6 @@ extern "C" __global__ void __raygen__raygeneration()
 
 extern "C" __global__ void __miss__miss()
 {
-
 }
 
 extern "C" __global__ void __anyhit__anyhit()
@@ -305,7 +330,8 @@ extern "C" __global__ void __anyhit__anyhit()
 
     prd.hit_count++;
 
-	unsigned int particle_index = optixGetInstanceId();
+    GaussianIndice* data = reinterpret_cast<GaussianIndice*>(optixGetSbtDataPointer());
+    unsigned int particle_index = data->index;
 
     HitInfo hit_info = {optixGetRayTmax(), particle_index};
     for (int i = 0; i < params.k; i++) {
@@ -318,4 +344,12 @@ extern "C" __global__ void __anyhit__anyhit()
     }
     else {
     }
+}
+
+extern "C" __global__ void __closesthit__closesthit()
+{
+    RayPayload& prd = *getPRD<RayPayload>();
+
+	prd.hit_reflection_primitive = true;
+	prd.t_hit_reflection = optixGetRayTmax();
 }
