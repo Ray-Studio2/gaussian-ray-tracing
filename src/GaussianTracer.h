@@ -55,6 +55,7 @@ public:
 private:
 	void createContext();
 	void buildAccelationStructure();
+	void buildReflectionAccelationStructure();
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
@@ -64,7 +65,7 @@ private:
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
-	OptixInstance createIAS(OptixTraversableHandle const& gas);
+	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
 
 	void filterGaussians();
 
@@ -84,11 +85,15 @@ private:
 	OptixTraversableHandle	   m_root;
 	std::vector<OptixInstance> instances;
 
+	// Reflection state
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle     reflection_ias = 0;
+
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;
 	OptixProgramGroup           raygen_prog_group;
 	OptixProgramGroup           miss_prog_group;
-	OptixProgramGroup           anyhit_prog_group;
+	OptixProgramGroup           hit_prog_group;
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
@@ -100,7 +105,7 @@ private:
 	CUdeviceptr               d_vertices;
 	CUdeviceptr               d_indices;
 
-	// Primitives
+	// Reflection Primitives
 	std::vector<Primitive> primitives;
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;

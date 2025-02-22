@@ -32,7 +32,7 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     pipeline_compile_options = {};
     raygen_prog_group        = 0;
     miss_prog_group          = 0;
-    anyhit_prog_group        = 0;
+    hit_prog_group        = 0;
     pipeline                 = 0;
     sbt                      = {};
     stream                   = 0;
@@ -338,20 +338,22 @@ void GaussianTracer::createProgramGroups()
     }
 
     {
-        OptixProgramGroupDesc anyhit_prog_group_desc = {};
+        OptixProgramGroupDesc hit_prog_group_desc = {};
 
-        anyhit_prog_group_desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-        anyhit_prog_group_desc.hitgroup.moduleAH = ptx_module;
-        anyhit_prog_group_desc.hitgroup.entryFunctionNameAH = "__anyhit__anyhit";
+        hit_prog_group_desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+        hit_prog_group_desc.hitgroup.moduleAH = ptx_module;
+        hit_prog_group_desc.hitgroup.entryFunctionNameAH = "__anyhit__anyhit";
+        hit_prog_group_desc.hitgroup.moduleCH = ptx_module;
+        hit_prog_group_desc.hitgroup.entryFunctionNameCH = "__closesthit__closesthit";
 
         OPTIX_CHECK_LOG(optixProgramGroupCreate(
             m_context,
-            &anyhit_prog_group_desc,
+            &hit_prog_group_desc,
             1,
             &program_group_options,
             LOG,
             &LOG_SIZE,
-            &anyhit_prog_group
+            &hit_prog_group
         ));
     }
 }
@@ -361,7 +363,7 @@ void GaussianTracer::createPipeline()
     OptixProgramGroup program_groups[] =
     {
         raygen_prog_group,
-        anyhit_prog_group,
+        hit_prog_group,
         miss_prog_group
     };
 
@@ -382,7 +384,7 @@ void GaussianTracer::createPipeline()
     // parameters to optixPipelineSetStackSize.
     OptixStackSizes stack_sizes = {};
     OPTIX_CHECK(optixUtilAccumulateStackSizes(raygen_prog_group, &stack_sizes, pipeline));
-    OPTIX_CHECK(optixUtilAccumulateStackSizes(anyhit_prog_group, &stack_sizes, pipeline));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(hit_prog_group, &stack_sizes, pipeline));
     OPTIX_CHECK(optixUtilAccumulateStackSizes(miss_prog_group, &stack_sizes, pipeline));
 
     uint32_t max_trace_depth = 2;
@@ -437,22 +439,22 @@ void GaussianTracer::createSBT()
         cudaMemcpyHostToDevice
     ));
 
-    std::vector<AnyHitRecord> anyhit_records;
+    std::vector<HitRecord> hit_records;
     for (int i = 0; i < m_gsIndice.size(); i++)
     {
-        AnyHitRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(anyhit_prog_group, &rec));
+        HitRecord rec;
+        OPTIX_CHECK(optixSbtRecordPackHeader(hit_prog_group, &rec));
 		rec.data.index = m_gsIndice[i].index;
-		anyhit_records.push_back(rec);
+		hit_records.push_back(rec);
     }
 
-    CUdeviceptr d_anyhit_records;
-    const size_t anyhit_record_size = sizeof(AnyHitRecord) * anyhit_records.size();
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_anyhit_records), anyhit_record_size));
+    CUdeviceptr d_hit_records;
+    const size_t hit_record_size = sizeof(HitRecord) * hit_records.size();
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_hit_records), hit_record_size));
     CUDA_CHECK(cudaMemcpy(
-        reinterpret_cast<void*>(d_anyhit_records),
-        anyhit_records.data(),
-        anyhit_record_size,
+        reinterpret_cast<void*>(d_hit_records),
+        hit_records.data(),
+        hit_record_size,
         cudaMemcpyHostToDevice
     ));
 
@@ -460,9 +462,9 @@ void GaussianTracer::createSBT()
     sbt.missRecordBase              = d_miss_record;
     sbt.missRecordStrideInBytes     = static_cast<uint32_t>(miss_record_size);
     sbt.missRecordCount             = RAY_TYPE_COUNT;
-    sbt.hitgroupRecordBase          = d_anyhit_records;
-    sbt.hitgroupRecordStrideInBytes = sizeof(AnyHitRecord);
-    sbt.hitgroupRecordCount         = static_cast<uint32_t>(anyhit_records.size());
+    sbt.hitgroupRecordBase          = d_hit_records;
+    sbt.hitgroupRecordStrideInBytes = sizeof(HitRecord);
+    sbt.hitgroupRecordCount         = static_cast<uint32_t>(hit_records.size());
 }
 
 void GaussianTracer::initParams()
@@ -476,8 +478,9 @@ void GaussianTracer::initParams()
     params.alpha_min          = alpha_min;
     params.sh_degree_max      = 0;
 	params.visualize_hitcount = false;
-	params.last_gaussian_index = m_gsIndice[m_gsIndice.size() - 1].index;
 
+	params.reflection_handle = reflection_ias;
+	
 	GaussianParticle* particles = new GaussianParticle[vertex_count];
 	for (int i = 0; i < vertex_count; i++)
 	{
@@ -552,6 +555,59 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 	camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
 	params.eye = camera.eye();
 	camera.UVWFrame(params.U, params.V, params.W);
+}
+
+void GaussianTracer::buildReflectionAccelationStructure()
+{
+    CUdeviceptr d_instances;
+    const size_t instances_size_in_bytes = reflection_instances.size() * sizeof(OptixInstance);
+    CUDA_CHECK(cudaMalloc((void**)&d_instances, instances_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy((void*)d_instances, reflection_instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
+
+    OptixBuildInput instance_input = {};
+    instance_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+    instance_input.instanceArray.instances = d_instances;
+    instance_input.instanceArray.numInstances = static_cast<uint32_t>(reflection_instances.size());
+
+    OptixAccelBuildOptions instance_accel_options = {};
+    instance_accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
+    instance_accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+    OptixAccelBufferSizes instance_buffer_sizes;
+    OPTIX_CHECK(optixAccelComputeMemoryUsage(
+        m_context,
+        &instance_accel_options,
+        &instance_input,
+        1,
+        &instance_buffer_sizes
+    ));
+
+    OptixTraversableHandle ias;
+
+    CUDA_CHECK(cudaMalloc((void**)&ias, instance_buffer_sizes.outputSizeInBytes));
+
+    CUdeviceptr d_instance_temp_buffer;
+    CUDA_CHECK(cudaMalloc((void**)&d_instance_temp_buffer, instance_buffer_sizes.tempSizeInBytes));
+
+    reflection_ias = 0;
+    OPTIX_CHECK(optixAccelBuild(
+        m_context,
+        0,
+        &instance_accel_options,
+        &instance_input,
+        1,
+        d_instance_temp_buffer,
+        instance_buffer_sizes.tempSizeInBytes,
+        ias,
+        instance_buffer_sizes.outputSizeInBytes,
+        &reflection_ias,
+        0,
+        0
+    ));
+
+    CUDA_CHECK(cudaStreamSynchronize(0));
+    CUDA_CHECK(cudaFree((void*)d_instance_temp_buffer));
+    CUDA_CHECK(cudaFree((void*)d_instances));
 }
 
 OptixTraversableHandle GaussianTracer::createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is)
@@ -634,27 +690,8 @@ OptixTraversableHandle GaussianTracer::createGAS(std::vector<float3> const& vs, 
     return gas;
 }
 
-OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas)
+OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::mat4 transform)
 {
-    // Random position
-    float tx = randomPosition(gen);
-    float ty = randomPosition(gen);
-    float tz = randomPosition(gen);
-
-    // Random rotation
-    float yaw   = randomAngle(gen);
-    float pitch = randomAngle(gen);
-    float roll  = randomAngle(gen);
-
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
-
-    glm::mat4 Ryaw     = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 Rpitch   = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 Rroll    = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 rotation = Rroll * Rpitch * Ryaw;
-
-    glm::mat4 transform = translation * rotation;
-
     float instance_transform[12] = {
         transform[0][0], transform[1][0], transform[2][0], transform[3][0],
         transform[0][1], transform[1][1], transform[2][1], transform[3][1],
@@ -676,9 +713,9 @@ void GaussianTracer::createPlane()
     Plane plane = Plane();
 
 	OptixTraversableHandle gas = createGAS(plane.getVertices(), plane.getIndices());
-    OptixInstance          ias = createIAS(gas);
+    OptixInstance          ias = createIAS(gas, plane.getTransform());
 
-	instances.push_back(ias);
+    reflection_instances.push_back(ias);
  //   numberOfPlanes++;
 
  //   Primitive p;
@@ -691,7 +728,7 @@ void GaussianTracer::createPlane()
  //   
 	//primitives.push_back(p);
 
-	buildAccelationStructure();
+	buildReflectionAccelationStructure();
 	updateParamsTraversableHandle();
 }
 
@@ -700,11 +737,11 @@ void GaussianTracer::createSphere()
     Sphere sphere = Sphere();
 
 	OptixTraversableHandle gas = createGAS(sphere.getVertices(), sphere.getIndices());
-	OptixInstance          ias = createIAS(gas);
+	OptixInstance          ias = createIAS(gas, sphere.getTransform());
 
-	instances.push_back(ias);
+    reflection_instances.push_back(ias);
 
-    buildAccelationStructure();
+    buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
 }
 
@@ -726,7 +763,7 @@ void GaussianTracer::createSphere()
 
 void GaussianTracer::updateParamsTraversableHandle()
 {
-	params.handle = m_root;
+	params.reflection_handle = reflection_ias;
 }
 
 void GaussianTracer::updateInstanceTransforms(Primitive& p)

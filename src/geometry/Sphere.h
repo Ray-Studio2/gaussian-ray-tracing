@@ -123,11 +123,19 @@ private:
     void setPosition()
     {
         position = make_float3(randomPosition(gen), randomPosition(gen), randomPosition(gen));
+
+        // Fixed position and rotation
+        float tx = 1.0f;
+        float ty = 0.0f;
+        float tz = 2.0f;
+
+        position = make_float3(tx, ty, tz);
     }
 
     // Degrees
     void setRotation()
     {
+
         float rot_x = glm::degrees(randomAngle(gen));
         float rot_y = glm::degrees(randomAngle(gen));
         float rot_z = glm::degrees(randomAngle(gen));
