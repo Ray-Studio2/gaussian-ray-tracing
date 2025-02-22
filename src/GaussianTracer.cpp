@@ -179,8 +179,6 @@ void GaussianTracer::createGaussiansAS()
         triangle_inputs[i].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
 
-    //numberOfGeometries = m_gsIndice.size();
-
     OptixAccelBuildOptions accel_options = {};
     accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
     accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
