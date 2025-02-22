@@ -16,6 +16,8 @@ Mesh::Mesh(Sphere& s)
     for (size_t i = 0; i < indices.size(); i += 3) {
         m_primitives.push_back(make_uint3(indices[i], indices[i + 1], indices[i + 2]));
     }
+    
+    m_transforms.push_back(s.getTransform());
 }
 
 Mesh::Mesh(Plane& p)
@@ -32,6 +34,8 @@ Mesh::Mesh(Plane& p)
     for (size_t i = 0; i < indices.size(); i += 3) {
         m_primitives.push_back(make_uint3(indices[i], indices[i + 1], indices[i + 2]));
     }
+
+	m_transforms.push_back(p.getTransform());
 }
 
 

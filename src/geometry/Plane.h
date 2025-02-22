@@ -66,7 +66,7 @@ private:
 		const float vTile = height / float(tessV);
 
 		float3 corner = make_float3(-width * 0.5f, -height * 0.5f, 0.0f);
-		float3 normal = make_float3(0.0f, 0.0f, 1.0f);
+		float3 normal = make_float3(0.0f, 0.0f, -1.0f);
 
 		for (unsigned int j = 0; j <= tessV; ++j)
 		{

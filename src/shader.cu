@@ -308,12 +308,10 @@ extern "C" __global__ void __raygen__raygeneration()
 			break;
 		}
 		/*else {
-			result = (prd.reflection_vertex.normal + make_float3(0,1e-6,0) + 1) / 2;
+			result = (prd.reflection_vertex.normal + 1) / 2;
 			float3 normal = prd.reflection_vertex.normal;
-			if (normal.x <= 0.1 && normal.y <= 0.1 && normal.z <= 0.1) {
-				printf("normal: %f %f %f\n", normal.x, normal.y, normal.z);
-				printf("normalized normal: %f %f %f\n", normalize(normal).x, normalize(normal).y, normalize(normal).z);
-			}
+			printf("normal: %f %f %f\n", normal.x, normal.y, normal.z);
+			printf("normalized normal: %f %f %f\n", normalize(normal).x, normalize(normal).y, normalize(normal).z);
 			break;
 		}*/
 		const Vertex hit_point = prd.reflection_vertex;
@@ -364,6 +362,7 @@ extern "C" __global__ void __anyhit__anyhit()
 	}
 }
 
+
 extern "C" __global__ void __closesthit__closesthit()
 {
 	RayPayload& prd = *getPRD<RayPayload>();
@@ -379,9 +378,9 @@ extern "C" __global__ void __closesthit__closesthit()
 	float3 v1 = params.d_mesh_positions[hit_primitive.y];
 	float3 v2 = params.d_mesh_positions[hit_primitive.z];
 
-	float3 n0 = -params.d_mesh_normals[hit_primitive.x];
-	float3 n1 = -params.d_mesh_normals[hit_primitive.y];
-	float3 n2 = -params.d_mesh_normals[hit_primitive.z];
+	float3 n0 = params.d_mesh_normals[hit_primitive.x];
+	float3 n1 = params.d_mesh_normals[hit_primitive.y];
+	float3 n2 = params.d_mesh_normals[hit_primitive.z];
 
 	float2 barycentrics = optixGetTriangleBarycentrics();
 

@@ -505,10 +505,18 @@ void GaussianTracer::initParams()
 	
 
     {
-        float3* positions = new float3[mesh_vertex_count];
-        for (int i = 0; i < mesh_vertex_count; i++)
-        {
-            positions[i] = m_mesh.m_positions[i];
+        std::vector<float3> transformed_positions;
+        for (int i = 0; i < mesh_vertex_count; i++) {
+            glm::vec3 glm_vertex = glm::vec3(m_mesh.m_positions[i].x, m_mesh.m_positions[i].y, m_mesh.m_positions[i].z);
+            glm::vec4 glm_transformed_vertex = m_mesh.m_transforms[0] * glm::vec4(glm_vertex, 1.0f);
+
+            transformed_positions.push_back(
+                make_float3(
+                    glm_transformed_vertex.x,
+                    glm_transformed_vertex.y,
+                    glm_transformed_vertex.z
+                )
+            );
         }
 
         CUdeviceptr d_mesh_positions;
@@ -516,7 +524,7 @@ void GaussianTracer::initParams()
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_mesh_positions), vertices_size));
         CUDA_CHECK(cudaMemcpy(
             reinterpret_cast<void*>(d_mesh_positions),
-            positions,
+            transformed_positions.data(),
             vertices_size,
             cudaMemcpyHostToDevice
         ));
@@ -525,10 +533,18 @@ void GaussianTracer::initParams()
     
 
     {
-        float3* normals = new float3[mesh_vertex_count];
-        for (int i = 0; i < mesh_vertex_count; i++)
-        {
-            normals[i] = m_mesh.m_normals[i];
+        std::vector<float3> transformed_normals;
+        for (int i = 0; i < mesh_vertex_count; i++) {
+            glm::vec3 glm_normal = glm::vec3(m_mesh.m_normals[i].x, m_mesh.m_normals[i].y, m_mesh.m_normals[i].z);
+            glm::vec4 glm_transformed_normal = m_mesh.m_transforms[0] * glm::vec4(glm_normal, 1.0f);
+
+            transformed_normals.push_back(
+                make_float3(
+                    glm_transformed_normal.x,
+                    glm_transformed_normal.y,
+                    glm_transformed_normal.z
+                )
+            );
         }
 
         CUdeviceptr d_mesh_normals;
@@ -536,7 +552,7 @@ void GaussianTracer::initParams()
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_mesh_normals), vertices_size));
         CUDA_CHECK(cudaMemcpy(
             reinterpret_cast<void*>(d_mesh_normals),
-            normals,
+            transformed_normals.data(),
             vertices_size,
             cudaMemcpyHostToDevice
         ));

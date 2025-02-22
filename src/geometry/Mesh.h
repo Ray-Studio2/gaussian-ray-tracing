@@ -26,4 +26,5 @@ public:
 	std::vector<float3> m_positions;
 	std::vector<float3> m_normals;
 	std::vector<uint3> m_primitives;
+	std::vector<glm::mat4> m_transforms;
 };

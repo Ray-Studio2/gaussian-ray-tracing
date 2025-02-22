@@ -76,6 +76,7 @@ struct Params
 	float3* d_mesh_positions;
 	float3* d_mesh_normals;
 	uint3* d_mesh_primitives;
+	glm::mat4* d_mesh_transforms;
 };
 
 struct RayPayload
