@@ -162,10 +162,10 @@ void GUI::renderPanel(GaussianTracer* tracer)
     {
 		if (ImGui::Button("Add Primitive"))
 		{
-            if (selected_geometry == 0) {
+            if (selected_geometry == PLANE) {
                 tracer->createPlane();
             }
-            else if (selected_geometry == 1) {
+            else if (selected_geometry == SPHERE) {
                 tracer->createSphere();
             }
 		}
@@ -177,19 +177,15 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		ImGui::PopItemWidth();
 
         for (Primitive& p : tracer->getPrimitives())
-        //auto& primitives = tracer->getPrimitives();
-        //for (int i = primitives.size() - 1; i > 0; --i)
         {
-			//Primitive& p = primitives[i];
-
 			std::string lbl = p.type + " " + std::to_string(p.index);
 			if (ImGui::TreeNode(lbl.c_str()))
 			{
 				// Translate
                 ImGui::Text("Translate:");
-				updated_tx = ImGui::SliderFloat("Tx", &p.position.x, -1.0f, 1.0f, "%.2f");
-				updated_ty = ImGui::SliderFloat("Ty", &p.position.y, -1.0f, 1.0f, "%.2f");
-				updated_tz = ImGui::SliderFloat("Tz", &p.position.z, -1.0f, 1.0f, "%.2f");
+				updated_tx = ImGui::SliderFloat("Tx", &p.position.x, -3.0f, 3.0f, "%.2f");
+				updated_ty = ImGui::SliderFloat("Ty", &p.position.y, -3.0f, 3.0f, "%.2f");
+				updated_tz = ImGui::SliderFloat("Tz", &p.position.z, -10.0f, 10.0f, "%.2f");
 				updated_translation = updated_tx || updated_ty || updated_tz;
 
 				// Rotate

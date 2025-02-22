@@ -29,6 +29,12 @@ struct Primitive
 	OptixTraversableHandle gas;
 };
 
+enum ReflectionPrimitiveType
+{
+	PLANE = 0,
+	SPHERE
+};
+
 class GaussianTracer
 {
 public:
@@ -56,6 +62,7 @@ public:
 private:
 	void createContext();
 	void buildAccelationStructure();
+	void buildReflectionAccelationStructure();
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
@@ -66,8 +73,6 @@ private:
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
-
-	void updateSBT();
 
 	void filterGaussians();
 
@@ -91,6 +96,10 @@ private:
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
+	// Reflection optix
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle	   reflection_ias = 0;
+
 	Params* d_params;
 
 	// Geometry
@@ -99,7 +108,7 @@ private:
 	CUdeviceptr               d_vertices;
 	CUdeviceptr               d_indices;
 
-	// Primitives
+	// Reflection Primitives
 	std::vector<Primitive> primitives;
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;

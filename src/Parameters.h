@@ -68,6 +68,9 @@ struct Params
 
 	// Debug
 	bool visualize_hitcount;
+
+	// Reflection
+	OptixTraversableHandle reflection_handle;
 };
 
 struct RayPayload
@@ -75,14 +78,14 @@ struct RayPayload
 	HitInfo      k_closest[MAX_K + 1];
 	unsigned int hit_count;
 
-	// Debug
-	int isReflectionObject;
+	bool hit_reflection_primitive;
+	float t_hit_reflection;
+	float3 color;
 };
 
 struct GaussianIndice
 {
 	size_t index;
-	int   isGaussian;
 };
 
 typedef Record<RayGenData>     RayGenRecord;
