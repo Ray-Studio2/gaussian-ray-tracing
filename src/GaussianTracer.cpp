@@ -69,8 +69,8 @@ void GaussianTracer::initializeOptix()
 	createContext();
 	createGaussiansAS();
     buildAccelationStructure();
-    //createSphere();
-    createPlane();
+    createSphere();
+    //createPlane();
 	createModule();
 	createProgramGroups();
 	createPipeline();
@@ -536,7 +536,7 @@ void GaussianTracer::initParams()
         std::vector<float3> transformed_normals;
         for (int i = 0; i < mesh_vertex_count; i++) {
             glm::vec3 glm_normal = glm::vec3(m_mesh.m_normals[i].x, m_mesh.m_normals[i].y, m_mesh.m_normals[i].z);
-            glm::vec4 glm_transformed_normal = m_mesh.m_transforms[0] * glm::vec4(glm_normal, 1.0f);
+            glm::vec4 glm_transformed_normal = m_mesh.m_transforms[0] * glm::vec4(glm_normal, 0.0f);
 
             transformed_normals.push_back(
                 make_float3(

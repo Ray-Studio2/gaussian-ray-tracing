@@ -308,10 +308,7 @@ extern "C" __global__ void __raygen__raygeneration()
 			break;
 		}
 		/*else {
-			result = (prd.reflection_vertex.normal + 1) / 2;
-			float3 normal = prd.reflection_vertex.normal;
-			printf("normal: %f %f %f\n", normal.x, normal.y, normal.z);
-			printf("normalized normal: %f %f %f\n", normalize(normal).x, normalize(normal).y, normalize(normal).z);
+			result = (prd.reflection_vertex.normal+1)/2;
 			break;
 		}*/
 		const Vertex hit_point = prd.reflection_vertex;
@@ -319,7 +316,7 @@ extern "C" __global__ void __raygen__raygeneration()
 			break;
 		}
 		ray_origin = hit_point.position;
-		ray_direction = normalize(reflect(ray_direction, hit_point.normal));
+		ray_direction = reflect(ray_direction, hit_point.normal);
 		recursion_count++;
 	}
 
@@ -389,7 +386,7 @@ extern "C" __global__ void __closesthit__closesthit()
 	float w2 = barycentrics.y;
 
 	float3 hit_position = w0 * v0 + w1 * v1 + w2 * v2;
-	float3 hit_normal = w0 * n0 + w1 * n1 + w2 * n2;
+	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 
 	prd.reflection_vertex.position = hit_position;
 	prd.reflection_vertex.normal = hit_normal;
