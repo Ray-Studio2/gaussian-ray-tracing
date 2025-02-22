@@ -5,6 +5,7 @@
 #include <vector_functions.h>
 
 #include "GaussianData.h"
+#include "geometry/Mesh.h"
 
 #define MAX_K 6
 #define SH_C0     0.28209479177387814f
@@ -72,6 +73,9 @@ struct Params
 
 	// Reflection
 	OptixTraversableHandle reflection_handle;
+	float3* d_mesh_positions;
+	float3* d_mesh_normals;
+	uint3* d_mesh_primitives;
 };
 
 struct RayPayload
@@ -81,7 +85,8 @@ struct RayPayload
 
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
-	float3 color;
+
+	Vertex reflection_vertex;
 };
 
 struct GaussianIndice

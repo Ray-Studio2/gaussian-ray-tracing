@@ -21,6 +21,7 @@ public:
 	~Plane() {};
 
 	std::vector<float3>& getVertices() { return vertices; }
+	std::vector<float3>& getNormals() { return normals; }
 	std::vector<unsigned int>& getIndices() { return indices; }
 
 	float3 getPosition() const { return position; }
@@ -78,6 +79,7 @@ private:
 				float3 vertex = corner + make_float3(u, v, 0.0f);
 
 				vertices.push_back(vertex);
+				normals.push_back(normal);
 			}
 		}
 
@@ -100,6 +102,13 @@ private:
 	void setPosition()
 	{
 		position = make_float3(randomPosition(gen), randomPosition(gen), randomPosition(gen));
+
+		// Fixed position and rotation
+		float tx = 0.0f;
+		float ty = 0.0f;
+		float tz = 5.0f;
+
+		position = make_float3(tx, ty, tz);
 	}
 
 	// Degrees
@@ -108,6 +117,12 @@ private:
 		float rot_x = glm::degrees(randomAngle(gen));
 		float rot_y = glm::degrees(randomAngle(gen));
 		float rot_z = glm::degrees(randomAngle(gen));
+
+		rotation = make_float3(rot_x, rot_y, rot_z);
+
+		rot_x = 0.0f;
+		rot_y = 0.0f;
+		rot_z = 0.0f;
 
 		rotation = make_float3(rot_x, rot_y, rot_z);
 	}
@@ -120,6 +135,7 @@ private:
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	std::vector<float3>		  vertices = {};
+	std::vector<float3>		  normals = {};
 	std::vector<unsigned int> indices = {};
 
 	float3 position = make_float3(0.0f, 0.0f, 0.0f);

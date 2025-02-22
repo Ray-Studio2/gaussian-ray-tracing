@@ -22,6 +22,7 @@ public:
 
     std::vector<float3>& getVertices() { return vertices; }
     std::vector<unsigned int>& getIndices() { return indices; }
+    std::vector<float3>& getNormals() { return normals; }
 
     float3 getPosition() const { return position; }
     float3 getRotation() const { return rotation; }
@@ -92,8 +93,8 @@ private:
 
                 // Unit sphere coordinates are the normals.
                 float3 normal = make_float3(cosPhi * sinTheta,
-                    -cosTheta,           // -y to start at the south pole.
-                    -sinPhi * sinTheta);
+                                            cosTheta,           // -y to start at the south pole.
+                                            sinPhi * sinTheta);
                 float3 vertex;
                 vertex = normal * radius;
                 vertices.push_back(vertex);
@@ -135,10 +136,13 @@ private:
     // Degrees
     void setRotation()
     {
-
         float rot_x = glm::degrees(randomAngle(gen));
         float rot_y = glm::degrees(randomAngle(gen));
         float rot_z = glm::degrees(randomAngle(gen));
+
+        rot_x = 0.0f;
+		rot_y = 0.0f;
+		rot_z = 0.0f;
 
         rotation = make_float3(rot_x, rot_y, rot_z);
     }

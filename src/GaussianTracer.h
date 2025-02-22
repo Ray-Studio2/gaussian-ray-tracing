@@ -17,6 +17,7 @@
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
+#include "geometry/Mesh.h"
 
 struct Primitive
 {
@@ -78,6 +79,10 @@ private:
 	std::vector<GaussianIndice> m_gsIndice;
 	size_t						vertex_count;
 	float						alpha_min;
+
+	// Reflection data
+	Mesh						m_mesh;
+	size_t 						mesh_vertex_count;
 
 	// Optix state
 	OptixDeviceContext		   m_context;
