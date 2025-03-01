@@ -37,9 +37,9 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    (void)io;
+	(void)io;
 
-    ImGui_ImplGlfw_InitForOpenGL(window, false);
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
     ImGui::StyleColorsDark();
     io.Fonts->AddFontDefault();
@@ -47,6 +47,89 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     ImGui::GetStyle().WindowBorderSize = 0.0f;
 
     return window;
+}
+
+void GUI::initCamera(Camera* camera)
+{
+    camera->setEye(make_float3(0.0f, 0.0f, 3.0f));
+    camera->setLookat(make_float3(0.0f, 0.0f, 0.0f));
+    camera->setUp(make_float3(0.0f, 1.0f, 0.0f));
+    camera->setFovY(60.0f);
+
+    camera_changed = true;
+
+    m_camera = camera;
+    reinitOrientationFromCamera();
+    setMoveSpeed(7.0f);
+    setReferenceFrame(
+        make_float3(1.0f, 0.0f, 0.0f),
+        make_float3(0.0f, 0.0f, 1.0f),
+        make_float3(0.0f, 1.0f, 0.0f)
+    );
+}
+
+void GUI::eventHandler()
+{
+	mouseEvent();
+	keyboardEvent();
+}
+
+void GUI::mouseEvent()
+{
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+            mouse_button = LEFT;
+			m_viewMode = EyeFixed;
+            startTracking(static_cast<int>(ImGui::GetMousePos().x), static_cast<int>(ImGui::GetMousePos().y));
+        }
+        else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            mouse_button = RELEASED;
+        }
+        else if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            mouse_button = RIGHT;
+			m_viewMode = LookAtFixed;
+            startTracking(static_cast<int>(ImGui::GetMousePos().x), static_cast<int>(ImGui::GetMousePos().y));
+        }
+
+        if (mouse_button == LEFT && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            updateTracking(static_cast<int>(ImGui::GetMousePos().x), static_cast<int>(ImGui::GetMousePos().y));
+
+            camera_changed = true;
+        }
+		else if (mouse_button == RIGHT && ImGui::IsMouseDragging(ImGuiMouseButton_Right)) {
+			updateTracking(static_cast<int>(ImGui::GetMousePos().x), static_cast<int>(ImGui::GetMousePos().y));
+
+			camera_changed = true;
+		}
+    }
+}
+
+void GUI::keyboardEvent()
+{
+    if (ImGui::IsKeyPressed(ImGuiKey_Q) || ImGui::IsKeyPressed(ImGuiKey_Escape))
+		glfwSetWindowShouldClose(glfwGetCurrentContext(), GLFW_TRUE);
+
+	if (ImGui::IsKeyPressed(ImGuiKey_A)) {
+		m_camera->setEye(m_camera->eye() + make_float3(0.01f * m_moveSpeed, 0.0f, 0.0f));
+        m_camera->setLookat(m_camera->lookat() + make_float3(0.01f * m_moveSpeed, 0.0f, 0.0f));
+        camera_changed = true;
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+		m_camera->setEye(m_camera->eye() + make_float3(-0.01f * m_moveSpeed, 0.0f, 0.0f));
+		m_camera->setLookat(m_camera->lookat() + make_float3(-0.01f * m_moveSpeed, 0.0f, 0.0f));
+		camera_changed = true;
+	}
+    if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+        m_camera->setEye(m_camera->eye() + make_float3(0.0f, 0.0f, -0.01f * m_moveSpeed));
+        m_camera->setLookat(m_camera->lookat() + make_float3(0.0f, 0.0f, -0.01f * m_moveSpeed));
+        camera_changed = true;
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_S)) {
+        m_camera->setEye(m_camera->eye() + make_float3(0.0f, 0.0f, 0.01f * m_moveSpeed));
+        m_camera->setLookat(m_camera->lookat() + make_float3(0.0f, 0.0f, 0.01f * m_moveSpeed));
+        camera_changed = true;
+    }
 }
 
 void GUI::reinitOrientationFromCamera()
@@ -96,8 +179,14 @@ void GUI::updateCamera()
 
     float3 dirWS = m_u * localDir.x + m_v * localDir.y + m_w * localDir.z;
     
-    const float3& eye = m_camera->eye();
-    m_camera->setLookat(eye - dirWS * m_cameraEyeLookatDistance);
+    if (m_viewMode == EyeFixed) {
+        const float3& eye = m_camera->eye();
+        m_camera->setLookat(eye - dirWS * m_cameraEyeLookatDistance);
+    }
+    else {
+        const float3& lookat = m_camera->lookat();
+        m_camera->setEye(lookat + dirWS * m_cameraEyeLookatDistance);
+    }
 }
 
 void GUI::setReferenceFrame(const float3& u, const float3& v, const float3& w)
