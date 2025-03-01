@@ -81,8 +81,7 @@ private:
 	float						alpha_min;
 
 	// Reflection data
-	Mesh						m_mesh;
-	size_t 						mesh_vertex_count;
+	MeshData					m_meshData;
 
 	// Optix state
 	OptixDeviceContext		   m_context;

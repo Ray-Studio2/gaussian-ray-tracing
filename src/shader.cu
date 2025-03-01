@@ -369,15 +369,22 @@ extern "C" __global__ void __closesthit__closesthit()
 	prd.t_hit_reflection = optixGetRayTmax();
 
 	unsigned int primitive_index = optixGetPrimitiveIndex();
-	uint3 hit_primitive = params.d_mesh_primitives[primitive_index];
+	unsigned int mesh_index = optixGetInstanceId();
+	
+	Offset offset = params.d_offsets[mesh_index];
+	uint3 hit_primitive = params.d_primitives[offset.primitive_offset + primitive_index];
+	
+	Vertex v0 = params.d_vertices[offset.vertex_offset + hit_primitive.x];
+	Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
+	Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
 
-	float3 v0 = params.d_mesh_positions[hit_primitive.x];
-	float3 v1 = params.d_mesh_positions[hit_primitive.y];
-	float3 v2 = params.d_mesh_positions[hit_primitive.z];
+	float3 p0 = v0.position;
+	float3 p1 = v1.position;
+	float3 p2 = v2.position;
 
-	float3 n0 = params.d_mesh_normals[hit_primitive.x];
-	float3 n1 = params.d_mesh_normals[hit_primitive.y];
-	float3 n2 = params.d_mesh_normals[hit_primitive.z];
+	float3 n0 = v0.normal;
+	float3 n1 = v1.normal;
+	float3 n2 = v2.normal;
 
 	float2 barycentrics = optixGetTriangleBarycentrics();
 
@@ -385,7 +392,7 @@ extern "C" __global__ void __closesthit__closesthit()
 	float w1 = barycentrics.x;
 	float w2 = barycentrics.y;
 
-	float3 hit_position = w0 * v0 + w1 * v1 + w2 * v2;
+	float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
 	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 
 	prd.reflection_vertex.position = hit_position;

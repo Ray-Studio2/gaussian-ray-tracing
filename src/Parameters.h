@@ -73,10 +73,9 @@ struct Params
 
 	// Reflection
 	OptixTraversableHandle reflection_handle;
-	float3* d_mesh_positions;
-	float3* d_mesh_normals;
-	uint3* d_mesh_primitives;
-	glm::mat4* d_mesh_transforms;
+	Vertex* d_vertices;
+	uint3* d_primitives;
+	Offset* d_offsets;
 };
 
 struct RayPayload

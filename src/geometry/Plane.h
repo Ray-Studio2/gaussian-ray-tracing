@@ -106,7 +106,7 @@ private:
 		// Fixed position and rotation
 		float tx = 0.0f;
 		float ty = 0.0f;
-		float tz = 2.0f;
+		float tz = 5.0f;
 
 		position = make_float3(tx, ty, tz);
 	}

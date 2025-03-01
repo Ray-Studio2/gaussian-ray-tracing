@@ -13,18 +13,29 @@ struct Vertex
 	float3 normal;
 };
 
-class Mesh
+struct Offset
+{
+	size_t vertex_offset;
+	size_t primitive_offset;
+};
+
+class MeshData
 {
 public:
-	Mesh();
-	Mesh(Sphere& s);
-	Mesh(Plane& s);
-	~Mesh();
+	MeshData();
+	~MeshData();
 
+	size_t getMeshCount() const;
 	size_t getVertexCount() const;
+	size_t getPrimitiveCount() const;
 
-	std::vector<float3> m_positions;
-	std::vector<float3> m_normals;
+	void addMesh(Sphere& s);
+	void addMesh(Plane& p);
+
+	float3 transform_position(float3 position, glm::mat4 transform);
+	float3 transform_normal(float3 normal, glm::mat4 transform);
+
+	std::vector<Offset> m_offsets;
+	std::vector<Vertex> m_vertices;
 	std::vector<uint3> m_primitives;
-	std::vector<glm::mat4> m_transforms;
 };
