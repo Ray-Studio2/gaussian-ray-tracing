@@ -7,9 +7,11 @@ set(CMAKE_MODULE_PATH
 	${CMAKE_MODULE_PATH}
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR})
 
 # Happly
 # happly.h max conflicts with windows.h
@@ -20,7 +22,6 @@ find_package(CUDA 5.0 REQUIRED)
 include_directories("${CUDA_INCLUDE_DIRS}")
 
 # Optix
-set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0" CACHE PATH "Path to OptiX installed location.")
 find_package(OptiX REQUIRED)
 include_directories(${OptiX_INCLUDE})
 
@@ -39,14 +40,7 @@ set(IMGUI
 	third_party/imgui/imgui_impl_glfw.cpp
 	third_party/imgui/imgui_impl_opengl3.cpp
 	third_party/imgui/imgui_demo.cpp
-	third_party/imgui/imgui_internal.h
-	third_party/imgui/imconfig.h
-	third_party/imgui/imgui.h
-	third_party/imgui/imgui_impl_glfw.h
-	third_party/imgui/imgui_impl_opengl3.h
-	third_party/imgui/imstb_rectpack.h
-	third_party/imgui/imstb_textedit.h
-	third_party/imgui/imstb_truetype.h
+	third_party/imgui/imgui_tables.cpp
 )
 
 include_directories(third_party/happly)
