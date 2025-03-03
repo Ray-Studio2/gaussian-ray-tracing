@@ -37,14 +37,15 @@ set(IMGUI
 	third_party/imgui/imgui.cpp
 	third_party/imgui/imgui_draw.cpp
 	third_party/imgui/imgui_widgets.cpp
-	third_party/imgui/imgui_impl_glfw.cpp
-	third_party/imgui/imgui_impl_opengl3.cpp
+	third_party/imgui/backends/imgui_impl_glfw.cpp
+	third_party/imgui/backends/imgui_impl_opengl3.cpp
 	third_party/imgui/imgui_demo.cpp
 	third_party/imgui/imgui_tables.cpp
 )
 
 include_directories(third_party/happly)
 include_directories(third_party/glm)
+include_directories(third_party/imgui/backends)
 include_directories(third_party/imgui)
 include_directories(${GLFW_DIR}/include)
 include_directories(third_party/glad)
