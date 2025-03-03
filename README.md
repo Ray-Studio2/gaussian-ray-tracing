@@ -17,8 +17,8 @@ $ cd gaussian-ray-tracing
 
 Build the project: (on Windows, use a [developer command prompt](https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#developer_command_prompt))
 ```sh
-mkdir build
-cd build
+$ mkdir build
+$ cd build
 
 gaussian-ray-tracing$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
 gaussian-ray-tracing$ cmake --build
