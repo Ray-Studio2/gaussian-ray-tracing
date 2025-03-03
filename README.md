@@ -9,7 +9,7 @@ Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
 - __[CMake](https://cmake.org/)__ v3.21 or higher.
 
 ### Compilation
-Clone with submodules.
+Clone repository with submodules.
 ```sh
 $ git clone --recursive https://github.com/GPU-Workers/gaussian-ray-tracing.git
 $ cd gaussian-ray-tracing
@@ -20,8 +20,8 @@ Build the project: (on Windows, use a [developer command prompt](https://docs.mi
 $ mkdir build
 $ cd build
 
-gaussian-ray-tracing$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
-gaussian-ray-tracing$ cmake --build
+$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
+$ cmake --build
 ```
 
 ### Keyboard shortcuts
