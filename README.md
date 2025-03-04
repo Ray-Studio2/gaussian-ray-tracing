@@ -20,7 +20,7 @@ Build the project: (on Windows, use a [developer command prompt](https://learn.m
 $ mkdir build
 $ cd build
 
-$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
+$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0" ..
 $ cmake --build
 ```
 
