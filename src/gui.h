@@ -55,6 +55,8 @@ public:
 		std::chrono::duration<double>& display_time
 	);
 
+	void setGaussianCenter(float3 gs_center) { center = gs_center; }
+
 	// Camera
 	void initCamera(Camera* camera);
 
@@ -95,6 +97,8 @@ private:
 	// Helper functions
 	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
+
+	float3 center = make_float3(0.0f, 0.0f, 0.0f);
 
 	// Camera variables
 	float m_moveSpeed = 1.0f;

@@ -6,7 +6,7 @@
 
 int main() 
 {
-	const std::string filename = "../../data/test.ply";
+	const std::string filename = "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = 1280;
@@ -24,6 +24,7 @@ int main()
 	output_buffer.setStream(tracer.stream);
 
 	Camera camera;
+	gui.setGaussianCenter(tracer.getGaussianCenter());
 	gui.initCamera(&camera);
 	tracer.initParams();
 

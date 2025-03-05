@@ -82,3 +82,18 @@ size_t GaussianData::getVertexCount() const
 	auto& element = plydata->getElement(plyElementName);
 	return element.count;
 }
+
+float3 GaussianData::getCenter()
+{
+	float3 center = make_float3(0.0f, 0.0f, 0.0f);
+    for (auto& p : m_particles)
+    {
+        center.x += p.position.x;
+        center.y += p.position.y;
+        center.z += p.position.z;
+    }
+    center.x /= static_cast<float>(m_particles.size());
+    center.y /= static_cast<float>(m_particles.size());
+    center.z /= static_cast<float>(m_particles.size());
+    return center;
+}

@@ -52,15 +52,12 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
 void GUI::initCamera(Camera* camera)
 {
     camera->setEye(make_float3(0.0f, 0.0f, 3.0f));
-    camera->setLookat(make_float3(0.0f, 0.0f, 0.0f));
+    camera->setLookat(center);
     camera->setUp(make_float3(0.0f, 1.0f, 0.0f));
     camera->setFovY(60.0f);
 
     camera_changed = true;
 
-	if (m_camera != nullptr) {
-		delete m_camera;
-	}
     m_camera = camera;
     reinitOrientationFromCamera();
     setMoveSpeed(7.0f);
@@ -74,7 +71,7 @@ void GUI::initCamera(Camera* camera)
 void GUI::resetCamera()
 {
     m_camera->setEye(make_float3(0.0f, 0.0f, 3.0f));
-    m_camera->setLookat(make_float3(0.0f, 0.0f, 0.0f));
+    m_camera->setLookat(center);
     m_camera->setUp(make_float3(0.0f, 1.0f, 0.0f));
     m_camera->setFovY(60.0f);
 

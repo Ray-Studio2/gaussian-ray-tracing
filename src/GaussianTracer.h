@@ -42,6 +42,7 @@ public:
 	~GaussianTracer();
 
 	void setSize(unsigned int width, unsigned int height);
+	float3 getGaussianCenter() { return m_gsData.getCenter(); }
 
 	void initializeOptix();
 	void initParams();
