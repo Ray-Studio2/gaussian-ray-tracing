@@ -90,6 +90,7 @@ private:
 	void startTracking(int x, int y);
 	void updateTracking(int x, int y);
 	void updateCamera();
+	void resetCamera();
 
 	// Helper functions
 	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
