@@ -7,6 +7,7 @@ Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
 - Visual Studio 2022
 - __[CUDA](https://developer.nvidia.com/cuda-toolkit)__ 11.4 or higher
 - __[CMake](https://cmake.org/)__ v3.8 or higher.
+- __[Optix](https://developer.nvidia.com/rtx/ray-tracing/optix)__ 7.7.0 or higher.
 
 ### Compilation
 Clone repository with submodules.
@@ -20,8 +21,9 @@ Build the project: (on Windows, use a [developer command prompt](https://learn.m
 $ mkdir build
 $ cd build
 
-$ cmake -DOptix_INSTALL_DIR="C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0" ..
-$ cmake --build
+# Add installed optix directory.
+$ cmake -DOptiX_INSTALL_DIR="/path/to/installed_optix" ..
+$ cmake --build .
 ```
 
 ### Keyboard shortcuts
