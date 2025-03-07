@@ -58,7 +58,7 @@ set(SHADERS
 )
 
 CUDA_WRAP_SRCS(
-	gaussain-tracing
+	gaussian-tracing
 	PTX
 	ptx_files
 	${SHADERS}
@@ -77,7 +77,7 @@ target_include_directories( glad PUBLIC third_party/glad )
 target_link_libraries( glad PUBLIC ${OPENGL_LIBRARIES} )
 
 add_executable(
-	gaussain-tracing
+	gaussian-tracing
 	src/main.cpp
 	src/GaussianTracer.cpp
 	src/GaussianData.cpp
@@ -99,11 +99,11 @@ add_executable(
 	${IMGUI}
  )
 
-target_compile_definitions(gaussain-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
-target_link_libraries(gaussain-tracing glfw glad ${OPENGL_gl_LIBRARY})
+target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
+target_link_libraries(gaussian-tracing glfw glad ${OPENGL_gl_LIBRARY})
 
 target_link_libraries(
-	gaussain-tracing
+	gaussian-tracing
 	${OptiX_LIBRARIES}
 	${CUDA_LIBRARIES}
 )
