@@ -21,8 +21,8 @@ Build the project: (on Windows, use a [developer command prompt](https://learn.m
 $ mkdir build
 $ cd build
 
-# Add installed optix directory.
-$ cmake -DOptiX_INSTALL_DIR="/path/to/installed_optix" ..
+# Add optix directory.
+$ cmake -DOptiX_INSTALL_DIR="/path/to/optix" ..
 $ cmake --build .
 ```
 
