@@ -31,3 +31,4 @@ $ cmake --build .
 | :-------------: | ------------- |
 | WASD            | Forward / Left / Backward / Right. |
 | Q / ESC         | Exit. |
+| R			      | Reset camera. |
