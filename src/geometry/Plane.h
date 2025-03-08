@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <vector_functions.h>
-#include <random>
 
 #include "../vector_math.h"
 
@@ -49,11 +48,6 @@ public:
 	}
 
 private:
-	std::mt19937 gen{ std::random_device{}() };
-
-	std::uniform_real_distribution<float> randomPosition{ -0.5f, 0.5f };
-	std::uniform_real_distribution<float> randomAngle{ glm::radians(-30.0f), glm::radians(30.0f) };
-
 	void createPlane()
 	{
 		unsigned int tessU = 1;
@@ -101,12 +95,10 @@ private:
 
 	void setPosition()
 	{
-		position = make_float3(randomPosition(gen), randomPosition(gen), randomPosition(gen));
-
 		// Fixed position and rotation
 		float tx = 0.0f;
 		float ty = 0.0f;
-		float tz = 5.0f;
+		float tz = 2.0f;
 
 		position = make_float3(tx, ty, tz);
 	}
@@ -114,17 +106,7 @@ private:
 	// Degrees
 	void setRotation()
 	{
-		float rot_x = glm::degrees(randomAngle(gen));
-		float rot_y = glm::degrees(randomAngle(gen));
-		float rot_z = glm::degrees(randomAngle(gen));
-
-		rotation = make_float3(rot_x, rot_y, rot_z);
-
-		rot_x = 0.0f;
-		rot_y = 0.0f;
-		rot_z = 0.0f;
-
-		rotation = make_float3(rot_x, rot_y, rot_z);
+		rotation = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
 	void setScale()
