@@ -72,6 +72,7 @@ struct Params
 
 	// Reflection
 	OptixTraversableHandle reflection_handle;
+	bool has_reflection_objects;
 	Vertex* d_vertices;
 	uint3* d_primitives;
 	Offset* d_offsets;

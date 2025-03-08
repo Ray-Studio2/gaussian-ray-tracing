@@ -44,6 +44,7 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     indices    = icosahedron.getIndices();
     d_vertices = 0;
     d_indices  = 0;
+    params.has_reflection_objects = false;
 }
 
 GaussianTracer::~GaussianTracer()
@@ -944,6 +945,7 @@ void GaussianTracer::createPlane()
 	p.gas           = gas;
 
     primitives.push_back(p);
+    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::createSphere()
@@ -1025,6 +1027,7 @@ void GaussianTracer::createSphere()
 	p.gas           = gas;
 
     primitives.push_back(p);
+    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex)
