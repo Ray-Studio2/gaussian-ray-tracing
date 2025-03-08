@@ -30,8 +30,7 @@ enum RayType
 };
 
 struct RayGenData { };
-struct AnyHitData { };
-struct MissData { };
+struct MissData   { };
 
 template <typename T>
 struct Record
@@ -85,7 +84,6 @@ struct RayPayload
 
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
-
 	Vertex reflection_vertex;
 };
 

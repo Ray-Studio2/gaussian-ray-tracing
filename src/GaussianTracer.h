@@ -21,18 +21,24 @@
 
 struct Primitive
 {
-	std::string  type;
-	unsigned int index;
-	float3 		 position;	// tx, ty, tz
-	float3 		 rotation;	// yaw, pitch, roll
-	float3 		 scale;		// sx, sy, sz
-	unsigned int instance_id;
+	std::string			   type;
+	size_t				   index;
+	float3 				   position;	// tx, ty, tz
+	float3 				   rotation;	// yaw, pitch, roll
+	float3 				   scale;		// sx, sy, sz
+	size_t				   instanceIndex;
+	OptixTraversableHandle gas;
+};
+
+enum ReflectionPrimitiveType
+{
+	PLANE = 0,
+	SPHERE
 };
 
 class GaussianTracer
 {
 public:
-
 	GaussianTracer(const std::string& filename);
 	~GaussianTracer();
 
@@ -49,9 +55,10 @@ public:
 	void updateInstanceTransforms(Primitive& p);
 
 	std::vector<Primitive>& getPrimitives() { return primitives; }
+	void removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex);
 
 	Params	 params;
-	CUstream stream;
+	CUstream stream;	
 
 private:
 	void createContext();
@@ -69,10 +76,6 @@ private:
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
 
 	void filterGaussians();
-
-	// Utility functions
-	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
-	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	// Gaussian data
 	GaussianData			    m_gsData;
@@ -100,6 +103,10 @@ private:
 	OptixProgramGroup           hit_prog_group;
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
+
+	// Reflection optix
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle	   reflection_ias = 0;
 
 	Params* d_params;
 

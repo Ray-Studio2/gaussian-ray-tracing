@@ -147,12 +147,12 @@ static __forceinline__ __device__ float3 trace(
 	RayPayload& prd
 )
 {
-	float3 L = make_float3(0.0f);
-	float  T = 1;
-	float  t_curr = params.t_min;
-	const  float epsilon = 1e-4f;
+    float3 L = make_float3(0.0f);
+    float  T = 1;
+    float  t_curr = params.t_min;
+    const  float epsilon = 1e-4f;
 
-	prd.hit_count = 0;
+    prd.hit_count = 0;
 	prd.hit_reflection_primitive = false;
 
 	float T_max = params.t_max;
@@ -362,6 +362,7 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
+
 	RayPayload& prd = *getPRD<RayPayload>();
 
 	prd.hit_count++;

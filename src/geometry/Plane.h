@@ -32,15 +32,15 @@ public:
 		float ty = position.y;
 		float tz = position.z;
 
-		float yaw = rotation.x;
+		float yaw   = rotation.x;
 		float pitch = rotation.y;
-		float roll = rotation.z;
+		float roll  = rotation.z;
 
 		glm::mat4 translation_mat = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
 
-		glm::mat4 Ryaw = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 Ryaw   = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 Rpitch = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 Rroll = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 Rroll  = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 rotation_mat = Rroll * Rpitch * Ryaw;
 
 		glm::mat4 transform = translation_mat * rotation_mat;
@@ -59,14 +59,14 @@ private:
 		unsigned int tessU = 1;
 		unsigned int tessV = 1;
 
-		const float width = 0.3f;
+		const float width  = 0.3f;
 		const float height = 0.5f;
 
 		const float uTile = width / float(tessU);
 		const float vTile = height / float(tessV);
 
 		float3 corner = make_float3(-width * 0.5f, -height * 0.5f, 0.0f);
-		float3 normal = make_float3(0.0f, 0.0f, -1.0f);
+		float3 normal = make_float3(0.0f, 0.0f, 1.0f);
 
 		for (unsigned int j = 0; j <= tessV; ++j)
 		{

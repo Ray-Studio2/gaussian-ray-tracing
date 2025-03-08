@@ -141,8 +141,8 @@ private:
         float rot_z = glm::degrees(randomAngle(gen));
 
         rot_x = 0.0f;
-		rot_y = 0.0f;
-		rot_z = 0.0f;
+        rot_y = 0.0f;
+        rot_z = 0.0f;
 
         rotation = make_float3(rot_x, rot_y, rot_z);
     }
