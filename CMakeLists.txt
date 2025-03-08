@@ -96,6 +96,8 @@ add_executable(
 	src/geometry/Icosahedron.h
 	src/geometry/Plane.h
 	src/geometry/Sphere.h
+	src/geometry/Mesh.h
+	src/geometry/Mesh.cpp
 	${IMGUI}
  )
 
