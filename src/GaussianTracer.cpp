@@ -622,8 +622,7 @@ void GaussianTracer::initParams()
     params.T_min              = 0.03f;
     params.alpha_min          = alpha_min;
     params.sh_degree_max      = 2;
-	  params.visualize_hitcount = false;
-	  params.reflection_handle = reflection_ias;
+	params.reflection_handle = reflection_ias;
 
     {
         GaussianParticle* particles = new GaussianParticle[vertex_count];

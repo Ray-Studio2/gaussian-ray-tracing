@@ -263,7 +263,6 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		ImGui::SliderInt("Hit array size", &tracer->params.k, 1, 6);
 		ImGui::SliderFloat("Alpha min", &tracer->params.alpha_min, 0.01f, 0.2f);
 		ImGui::SliderFloat("T min", &tracer->params.T_min, 0.03f, 0.99f);
-        ImGui::Checkbox("Visualize hit count", &tracer->params.visualize_hitcount);
 
         ImGui::PopItemWidth();
 	}

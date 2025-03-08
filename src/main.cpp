@@ -62,8 +62,8 @@ int main(int argc, char* argv[])
 	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
-	unsigned int width  = width_flag ? args::get(width_flag) : 1920;
-	unsigned int height = height_flag ? args::get(height_flag) : 1080;
+	unsigned int width  = width_flag ? args::get(width_flag) : 1280;
+	unsigned int height = height_flag ? args::get(height_flag) : 720;
 
 	tracer.setSize(width, height);
 	tracer.initializeOptix();
