@@ -274,10 +274,10 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		if (ImGui::Button("Add Primitive"))
 		{
             if (selected_geometry == PLANE) {
-                tracer->createPlane();
+				tracer->createGeometry<Plane>(geometries[selected_geometry]);
             }
             else if (selected_geometry == SPHERE) {
-                tracer->createSphere();
+                tracer->createGeometry<Sphere>(geometries[selected_geometry]);
             }
 		}
 		

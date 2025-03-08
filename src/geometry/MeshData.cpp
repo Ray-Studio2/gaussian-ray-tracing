@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "MeshData.h"
 
 MeshData::MeshData() {}
 
@@ -16,39 +16,12 @@ float3 MeshData::transform_normal(float3 normal, glm::mat4 transform)
 	return make_float3(transformed_normal.x, transformed_normal.y, transformed_normal.z);
 }
 
-void MeshData::addMesh(Sphere& s)
+void MeshData::addMesh(Mesh& m)
 {
-    std::vector<float3> vertices = s.getVertices();
-    std::vector<float3> normals = s.getNormals();
-    std::vector<unsigned int> indices = s.getIndices();
-	glm::mat4 transform = s.getTransform();
-    
-    size_t last_mesh_num = getMeshCount();
-    if (last_mesh_num == 0) {
-        m_offsets.push_back({ 0, 0 });
-    }
-    else {
-        m_offsets.push_back({ m_vertices.size(), m_primitives.size() });
-    }
-
-    for (size_t i = 0; i < vertices.size(); i++) {
-        Vertex v = { transform_position(vertices[i], transform), transform_normal(normals[i], transform) };
-        m_vertices.push_back(v);
-    }
-
-    for (size_t i = 0; i < indices.size(); i += 3) {
-        m_primitives.push_back(make_uint3(indices[i], indices[i + 1], indices[i + 2]));
-    }
-
-    
-}
-
-void MeshData::addMesh(Plane& p)
-{
-    std::vector<float3> vertices = p.getVertices();
-    std::vector<float3> normals = p.getNormals();
-    std::vector<unsigned int> indices = p.getIndices();
-    glm::mat4 transform = p.getTransform();
+    std::vector<float3> vertices = m.getVertices();
+    std::vector<float3> normals = m.getNormals();
+    std::vector<unsigned int> indices = m.getIndices();
+    glm::mat4 transform = m.getTransform();
 
     size_t last_mesh_num = getMeshCount();
     if (last_mesh_num == 0) {
@@ -67,7 +40,6 @@ void MeshData::addMesh(Plane& p)
         m_primitives.push_back(make_uint3(indices[i], indices[i + 1], indices[i + 2]));
     }
 }
-
 
 MeshData::~MeshData() {}
 
