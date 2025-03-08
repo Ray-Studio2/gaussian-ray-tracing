@@ -303,7 +303,7 @@ void GaussianTracer::createModule()
     pipeline_compile_options.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG | OPTIX_EXCEPTION_FLAG_TRACE_DEPTH | OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
     pipeline_compile_options.pipelineLaunchParamsVariableName = "params";
 
-	std::vector<char> ptx_code = readData("../gaussain-tracing_generated_shader.cu.ptx");
+	std::vector<char> ptx_code = readData("gaussian-tracing_generated_shader.cu.ptx");
 
     OPTIX_CHECK_LOG(optixModuleCreate(
         m_context,

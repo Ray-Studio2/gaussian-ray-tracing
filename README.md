@@ -1,4 +1,4 @@
-# gaussian-ray-tracing
+# 3D Gaussian Ray Tracing
 Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
 
 ## Building gaussian-ray-tracing (Windows)
@@ -24,6 +24,12 @@ $ cd build
 # Add optix directory.
 $ cmake -DOptiX_INSTALL_DIR="/path/to/optix" ..
 $ cmake --build .
+```
+
+## Usage
+```sh
+$ cd build
+$ gaussian-ray-tracing.exe
 ```
 
 ### Keyboard shortcuts

@@ -45,7 +45,7 @@ public:
 	GUI();
 	~GUI();
 
-	GLFWwindow* initUI(const char* window_title, int width, int height);
+	GLFWwindow* initUI(const char* window_title);
 	void beginFrame();
 	void endFrame();
 	void renderGUI(
@@ -54,6 +54,8 @@ public:
 		std::chrono::duration<double>& render_time,
 		std::chrono::duration<double>& display_time
 	);
+
+	void setSize(int width, int height) { m_width = width; m_height = height; }
 
 	void setGaussianCenter(float3 gs_center) { center = gs_center; }
 
@@ -97,6 +99,10 @@ private:
 	// Helper functions
 	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
+
+	// GUI variables
+	int m_width  = 0;
+	int m_height = 0;
 
 	float3 center = make_float3(0.0f, 0.0f, 0.0f);
 

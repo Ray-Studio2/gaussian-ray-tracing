@@ -4,19 +4,73 @@
 #include "Display.h"
 #include "Camera.h"
 
-int main() 
+#include <args/args.hxx>
+
+int main(int argc, char* argv[])
 {
-	const std::string filename = "../data/test.ply";
+	args::ArgumentParser parser(
+		"3D Gaussian Ray Tracing\n",
+		"Version v1.0.0"
+	);
+
+	args::HelpFlag help(
+		parser, 
+		"HELP",
+		"Display this help menu", 
+		{ 'h', "help" }
+	);
+
+	args::ValueFlag<std::string> ply_flag{
+		parser,
+		"PLY",
+		"The PLY file to load.",
+		{'p', "ply"},
+	};
+
+	args::ValueFlag<uint32_t> width_flag{
+		parser,
+		"WIDTH",
+		"Resolution width of the GUI.",
+		{"width"},
+	};
+
+	args::ValueFlag<uint32_t> height_flag{
+		parser,
+		"HEIGHT",
+		"Resolution height of the GUI.",
+		{"height"},
+	};
+
+	try {
+		parser.ParseCLI(argc, argv);
+	}
+	catch (const args::Help&) {
+		std::cout << parser;
+		return 0;
+	}
+	catch (const args::ParseError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return -1;
+	}
+	catch (const args::ValidationError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return -2;
+	}
+
+	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
-	unsigned int width  = 1280;
-	unsigned int height = 720;
+	unsigned int width  = width_flag ? args::get(width_flag) : 1920;
+	unsigned int height = height_flag ? args::get(height_flag) : 1080;
 
 	tracer.setSize(width, height);
 	tracer.initializeOptix();
 
 	GUI gui;
-	GLFWwindow* window = gui.initUI("Gaussian Tracer", width, height);
+	gui.setSize(width, height);
+	GLFWwindow* window = gui.initUI("Gaussian Tracer");
 
 	GLDisplay gldisplay;
 

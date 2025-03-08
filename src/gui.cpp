@@ -9,7 +9,7 @@ GUI::~GUI()
 {
 }
 
-GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
+GLFWwindow* GUI::initUI(const char* window_title)
 {
     GLFWwindow* window = nullptr;
     glfwSetErrorCallback(errorCallback);
@@ -21,7 +21,7 @@ GLFWwindow* GUI::initUI(const char* window_title, int width, int height)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // To make Apple happy -- should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(width, height, window_title, nullptr, nullptr);
+    window = glfwCreateWindow(m_width, m_height, window_title, nullptr, nullptr);
     if (!window)
         throw std::runtime_error("Failed to create GLFW window");
 
@@ -252,8 +252,8 @@ void GUI::renderGUI(
 
 void GUI::renderPanel(GaussianTracer* tracer)
 {
-	ImGui::SetNextWindowPos(ImVec2(960, 20));
-	ImGui::SetNextWindowSize(ImVec2(300, 680));
+	ImGui::SetNextWindowPos(ImVec2(m_width - 320.0f, 20));
+    ImGui::SetNextWindowSize(ImVec2(300, m_height - 40));
     ImGui::Begin("Pannel");
 
     if (ImGui::CollapsingHeader("DEBUG"))
