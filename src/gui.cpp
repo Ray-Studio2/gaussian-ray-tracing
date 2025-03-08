@@ -1,6 +1,8 @@
 #include "gui.h"
 #include "Exception.h"
 
+#include <ImGuiFileDialog.h>
+
 GUI::GUI()
 {
 }
@@ -279,8 +281,30 @@ void GUI::renderPanel(GaussianTracer* tracer)
             else if (selected_geometry == SPHERE) {
                 tracer->createGeometry<Sphere>(geometries[selected_geometry]);
             }
+            else if (selected_geometry == CUSTOM) {
+				open_file_dialog = true;
+            }
 		}
-		
+
+        if (open_file_dialog) {
+            IGFD::FileDialogConfig config;
+            config.path = ".";
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".ply, .obj", config);
+        }
+
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                // action
+
+                
+            }
+            ImGuiFileDialog::Instance()->Close();
+
+            open_file_dialog = false;
+        }
+
         ImGui::SameLine();
 
 		ImGui::PushItemWidth(70);
@@ -294,24 +318,21 @@ void GUI::renderPanel(GaussianTracer* tracer)
 			{
 				// Translate
                 ImGui::Text("Translate:");
-				updated_tx = ImGui::SliderFloat("Tx", &p.position.x, -3.0f, 3.0f, "%.2f");
-				updated_ty = ImGui::SliderFloat("Ty", &p.position.y, -3.0f, 3.0f, "%.2f");
-				updated_tz = ImGui::SliderFloat("Tz", &p.position.z, -10.0f, 10.0f, "%.2f");
-				updated_translation = updated_tx || updated_ty || updated_tz;
+                ImGui::SliderFloat("Tx", &p.position.x, -3.0f, 3.0f, "%.2f");
+				ImGui::SliderFloat("Ty", &p.position.y, -3.0f, 3.0f, "%.2f");
+				ImGui::SliderFloat("Tz", &p.position.z, -10.0f, 10.0f, "%.2f");
 
 				// Rotate
 				ImGui::Text("Rotate:");
-				updated_yaw   = ImGui::SliderFloat("Yaw",   &p.rotation.x, -180.0f, 180.0f, "%.2f");
-				updated_pitch = ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
-				updated_roll  = ImGui::SliderFloat("Roll",  &p.rotation.z, -180.0f, 180.0f, "%.2f");
-				updated_rotation = updated_yaw || updated_pitch || updated_roll;
+				ImGui::SliderFloat("Yaw",   &p.rotation.x, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
+				ImGui::SliderFloat("Roll",  &p.rotation.z, -180.0f, 180.0f, "%.2f");
 
 				// Scale
 				ImGui::Text("Scale:");
-				updated_sx = ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
-				updated_sy = ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
-				updated_sz = ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
-				updated_scale = updated_sx || updated_sy || updated_sz;
+				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
+				ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
+				ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
 
                 // Remove primitive
                 if (ImGui::Button("Remove"))
@@ -325,10 +346,7 @@ void GUI::renderPanel(GaussianTracer* tracer)
                 ImGui::TreePop();
 			}
 
-            if (updated_translation || updated_rotation || updated_scale)
-            {
-                tracer->updateInstanceTransforms(p);
-            }
+            tracer->updateInstanceTransforms(p);
         }
 
         if (remove_primitive)

@@ -51,6 +51,8 @@ include_directories(${GLFW_DIR}/include)
 include_directories(third_party/glad)
 include_directories(third_party)
 
+include_directories(third_party/ImGuiFileDialog)
+
 set(SHADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cu
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h
@@ -68,7 +70,7 @@ add_library( glad SHARED
   third_party/KHR/khrplatform.h
   third_party/glad/glad.c
   third_party/glad/glad.h
- "src/geometry/Mesh.h")
+)
 
 target_compile_definitions( glad
   PRIVATE GLAD_GLAPI_EXPORT_BUILD
@@ -99,7 +101,9 @@ add_executable(
 	src/geometry/MeshData.h
 	src/geometry/MeshData.cpp
 	${IMGUI}
-  "src/geometry/Mesh.h")
+  src/geometry/Mesh.h
+	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
+ )
 
 target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(gaussian-tracing glfw glad ${OPENGL_gl_LIBRARY})

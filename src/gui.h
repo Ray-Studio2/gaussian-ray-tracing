@@ -127,22 +127,10 @@ private:
 	MouseButton mouse_button = RELEASED;
 
 	// Primitives
-	const char* geometries[2] = { "Plane", "Sphere" };
+	const char* geometries[3] = { "Plane", "Sphere", "Custom" };
 	int			selected_geometry = 0;
 
-	// Transform flags
-	bool updated_tx          = false;
-	bool updated_ty          = false;
-	bool updated_tz          = false;
-	bool updated_yaw         = false;
-	bool updated_pitch       = false;
-	bool updated_roll        = false;
-	bool updated_sx          = false;
-	bool updated_sy          = false;
-	bool updated_sz          = false;
-	bool updated_translation = false;
-	bool updated_rotation    = false;
-	bool updated_scale       = false;
+	bool open_file_dialog = false;
 
 	// Remove flag
 	bool remove_primitive             = false;

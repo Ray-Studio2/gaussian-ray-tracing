@@ -7,3 +7,6 @@
 [submodule "third_party/args"]
 	path = third_party/args
 	url = https://github.com/Taywee/args.git
+[submodule "third_party/ImGuiFileDialog"]
+	path = third_party/ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog.git
