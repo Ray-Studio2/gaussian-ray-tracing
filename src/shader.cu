@@ -159,23 +159,26 @@ static __forceinline__ __device__ float3 trace(
 
 	unsigned int step = 0;
 
-	uint32_t u0, u1;
-	packPointer(&prd, u0, u1);
+	if (params.has_reflection_objects)
+	{
+		uint32_t u0, u1;
+		packPointer(&prd, u0, u1);
 
-	optixTrace(
-		params.reflection_handle,
-		ray_origin,
-		ray_direction,
-		t_curr,
-		params.t_max,
-		0.0f,
-		OptixVisibilityMask(1),
-		OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-		RAY_TYPE_RADIANCE,        // SBT offset
-		RAY_TYPE_COUNT,           // SBT stride
-		RAY_TYPE_RADIANCE,        // missSBTIndex
-		u0, u1
-	);
+		optixTrace(
+			params.reflection_handle,
+			ray_origin,
+			ray_direction,
+			t_curr,
+			params.t_max,
+			0.0f,
+			OptixVisibilityMask(1),
+			OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+			RAY_TYPE_RADIANCE,        // SBT offset
+			RAY_TYPE_COUNT,           // SBT stride
+			RAY_TYPE_RADIANCE,        // missSBTIndex
+			u0, u1
+		);
+	}
 
 	if (prd.hit_reflection_primitive) {
 		return make_float3(0.0f, 0.0f, 0.0f);
@@ -320,7 +323,6 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
-
 	RayPayload& prd = *getPRD<RayPayload>();
 
 	prd.hit_count++;
