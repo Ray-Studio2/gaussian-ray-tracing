@@ -4,100 +4,82 @@
 #include "Display.h"
 #include "Camera.h"
 
-GUI		gui;
-Camera  camera;
-int32_t mouse_button = -1;
-bool    camera_changed = true;
+#include <args/args.hxx>
 
-static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+int main(int argc, char* argv[])
 {
-	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
-
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.WantCaptureMouse)
-	{
-		return;
-	}
-
-	if (action == GLFW_PRESS)
-	{
-		mouse_button = button;
-		gui.startTracking(static_cast<int>(xpos), static_cast<int>(ypos));
-	}
-	else
-	{
-		mouse_button = -1;
-	}
-}
-
-static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-	Params* params = static_cast<Params*>(glfwGetWindowUserPointer(window));
-
-	if (mouse_button == GLFW_MOUSE_BUTTON_LEFT)
-	{
-		gui.updateTracking(static_cast<int>(xpos), static_cast<int>(ypos));
-		camera_changed = true;
-	}
-	else if (mouse_button == GLFW_MOUSE_BUTTON_RIGHT)
-	{
-		// TODO: Implement Eye Fixed mode
-	}
-}
-
-static void keyCallback(GLFWwindow* window, int32_t key, int32_t /*scancode*/, int32_t action, int32_t /*mods*/)
-{
-	if (action == GLFW_PRESS)
-	{
-		if (key == GLFW_KEY_Q || key == GLFW_KEY_ESCAPE)
-		{
-			glfwSetWindowShouldClose(window, true);
-		}
-	}
-}
-
-void initCamera()
-{
-	camera.setEye(make_float3(0.0f, 0.0f, 3.0f));
-	camera.setLookat(make_float3(0.0f, 0.0f, 0.0f));
-	camera.setUp(make_float3(0.0f, 1.0f, 0.0f));
-	camera.setFovY(60.0f);
-
-	camera_changed = true;
-
-	gui.setCamera(&camera);
-	gui.setMoveSpeed(7.0f);
-	gui.setReferenceFrame(
-		make_float3(1.0f, 0.0f, 0.0f),
-		make_float3(0.0f, 0.0f, 1.0f),
-		make_float3(0.0f, 1.0f, 0.0f)
+	args::ArgumentParser parser(
+		"3D Gaussian Ray Tracing\n",
+		"Version v1.0.0"
 	);
-}
 
-int main() 
-{
-	const std::string filename = "../../data/train.ply";
+	args::HelpFlag help(
+		parser, 
+		"HELP",
+		"Display this help menu", 
+		{ 'h', "help" }
+	);
+
+	args::ValueFlag<std::string> ply_flag{
+		parser,
+		"PLY",
+		"The PLY file to load.",
+		{'p', "ply"},
+	};
+
+	args::ValueFlag<uint32_t> width_flag{
+		parser,
+		"WIDTH",
+		"Resolution width of the GUI.",
+		{"width"},
+	};
+
+	args::ValueFlag<uint32_t> height_flag{
+		parser,
+		"HEIGHT",
+		"Resolution height of the GUI.",
+		{"height"},
+	};
+
+	try {
+		parser.ParseCLI(argc, argv);
+	}
+	catch (const args::Help&) {
+		std::cout << parser;
+		return 0;
+	}
+	catch (const args::ParseError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return -1;
+	}
+	catch (const args::ValidationError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return -2;
+	}
+
+	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
-	unsigned int width  = 1280;
-	unsigned int height = 720;
+	unsigned int width  = width_flag ? args::get(width_flag) : 1920;
+	unsigned int height = height_flag ? args::get(height_flag) : 1080;
 
 	tracer.setSize(width, height);
 	tracer.initializeOptix();
 
-	GLFWwindow* window = gui.initUI("Gaussian Tracer", width, height);
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);
-	glfwSetCursorPosCallback(window, cursorPosCallback);
-	glfwSetKeyCallback(window, keyCallback);
+	GUI gui;
+	gui.setSize(width, height);
+	GLFWwindow* window = gui.initUI("Gaussian Tracer");
 
 	GLDisplay gldisplay;
 
 	CUDAOutputBuffer output_buffer(width, height);
 	output_buffer.setStream(tracer.stream);
 
-	initCamera();
-
+	Camera camera;
+	gui.setGaussianCenter(tracer.getGaussianCenter());
+	gui.initCamera(&camera);
 	tracer.initParams();
 
 	std::chrono::duration<double> state_update_time(0.0);
@@ -110,7 +92,9 @@ int main()
 
 		glfwPollEvents();
 
-		tracer.updateCamera(camera, camera_changed);
+		gui.eventHandler();
+
+		tracer.updateCamera(camera, gui.camera_changed);
 
 		auto t1 = std::chrono::steady_clock::now();
 		state_update_time += t1 - t0;

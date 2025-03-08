@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.8)
 
 project ("gaussian-tracing")
 
@@ -7,9 +7,11 @@ set(CMAKE_MODULE_PATH
 	${CMAKE_MODULE_PATH}
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR})
 
 # Happly
 # happly.h max conflicts with windows.h
@@ -20,7 +22,6 @@ find_package(CUDA 5.0 REQUIRED)
 include_directories("${CUDA_INCLUDE_DIRS}")
 
 # Optix
-set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0" CACHE PATH "Path to OptiX installed location.")
 find_package(OptiX REQUIRED)
 include_directories(${OptiX_INCLUDE})
 
@@ -36,21 +37,15 @@ set(IMGUI
 	third_party/imgui/imgui.cpp
 	third_party/imgui/imgui_draw.cpp
 	third_party/imgui/imgui_widgets.cpp
-	third_party/imgui/imgui_impl_glfw.cpp
-	third_party/imgui/imgui_impl_opengl3.cpp
+	third_party/imgui/backends/imgui_impl_glfw.cpp
+	third_party/imgui/backends/imgui_impl_opengl3.cpp
 	third_party/imgui/imgui_demo.cpp
-	third_party/imgui/imgui_internal.h
-	third_party/imgui/imconfig.h
-	third_party/imgui/imgui.h
-	third_party/imgui/imgui_impl_glfw.h
-	third_party/imgui/imgui_impl_opengl3.h
-	third_party/imgui/imstb_rectpack.h
-	third_party/imgui/imstb_textedit.h
-	third_party/imgui/imstb_truetype.h
+	third_party/imgui/imgui_tables.cpp
 )
 
 include_directories(third_party/happly)
 include_directories(third_party/glm)
+include_directories(third_party/imgui/backends)
 include_directories(third_party/imgui)
 include_directories(${GLFW_DIR}/include)
 include_directories(third_party/glad)
@@ -63,7 +58,7 @@ set(SHADERS
 )
 
 CUDA_WRAP_SRCS(
-	gaussain-tracing
+	gaussian-tracing
 	PTX
 	ptx_files
 	${SHADERS}
@@ -82,7 +77,7 @@ target_include_directories( glad PUBLIC third_party/glad )
 target_link_libraries( glad PUBLIC ${OPENGL_LIBRARIES} )
 
 add_executable(
-	gaussain-tracing
+	gaussian-tracing
 	src/main.cpp
 	src/GaussianTracer.cpp
 	src/GaussianData.cpp
@@ -106,11 +101,11 @@ add_executable(
 	${IMGUI}
  )
 
-target_compile_definitions(gaussain-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
-target_link_libraries(gaussain-tracing glfw glad ${OPENGL_gl_LIBRARY})
+target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
+target_link_libraries(gaussian-tracing glfw glad ${OPENGL_gl_LIBRARY})
 
 target_link_libraries(
-	gaussain-tracing
+	gaussian-tracing
 	${OptiX_LIBRARIES}
 	${CUDA_LIBRARIES}
 )

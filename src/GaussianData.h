@@ -23,8 +23,8 @@ public:
 	~GaussianData();
 
 	size_t getVertexCount() const;
-
 	std::vector<GaussianParticle> m_particles;
+	float3 getCenter();
 
 private:
 	void loadPly();
@@ -33,4 +33,6 @@ private:
 	std::string m_filename;
 	std::string plyElementName;
 	happly::PLYData* plydata;
+
+	float3 center;
 };
