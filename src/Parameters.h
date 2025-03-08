@@ -5,7 +5,7 @@
 #include <vector_functions.h>
 
 #include "GaussianData.h"
-#include "geometry/Mesh.h"
+#include "geometry/MeshData.h"
 
 #define MAX_K 6
 #define SH_C0     0.28209479177387814f

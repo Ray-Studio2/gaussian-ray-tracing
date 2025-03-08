@@ -51,8 +51,8 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	void createPlane();
-	void createSphere();
+	template <typename T>
+	void createGeometry(std::string geometry_name);
 	void updateInstanceTransforms(Primitive& p);
 
 	std::vector<Primitive>& getPrimitives() { return primitives; }
@@ -76,6 +76,9 @@ private:
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
+
+	void sendGeometryAttributesToDevice();
+	void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
 
 	void filterGaussians();
 
@@ -119,3 +122,25 @@ private:
 	unsigned int		   numberOfPlanes  = 0;
 	unsigned int		   numberOfSpheres = 0;
 };
+
+
+template <typename T>
+void GaussianTracer::createGeometry(std::string geometry_name)
+{
+	T geometry = T();
+	m_meshData.addMesh(geometry);
+
+	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());
+	OptixInstance          ias = createIAS(gas, geometry.getTransform());
+
+	reflection_instances.push_back(ias);
+
+	buildReflectionAccelationStructure();
+	updateParamsTraversableHandle();
+
+	sendGeometryAttributesToDevice();
+
+	addPrimitives(gas, geometry, geometry_name);
+
+	params.has_reflection_objects = true;
+}

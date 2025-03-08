@@ -855,30 +855,8 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 	return instance;
 }
 
-void GaussianTracer::createPlane()
+void GaussianTracer::sendGeometryAttributesToDevice()
 {
-    Plane plane = Plane();
-    m_meshData.addMesh(plane);
-    
-	OptixTraversableHandle gas = createGAS(plane.getVertices(), plane.getIndices());
-    OptixInstance          ias = createIAS(gas, plane.getTransform());
-
-    reflection_instances.push_back(ias);
- //   numberOfPlanes++;
-
- //   Primitive p;
-	//p.type        = "Plane";
- //   p.index       = numberOfPlanes;
-	//p.position    = make_float3(tx, ty, tz);
-	//p.rotation    = make_float3(degrees(yaw), degrees(pitch), degrees(roll));
-	//p.scale       = make_float3(1.0f, 1.0f, 1.0f);
-	//p.instance_id = plane_instance.instanceId;
- //   
-	//primitives.push_back(p);
-
-	buildReflectionAccelationStructure();
-	updateParamsTraversableHandle();
-
     {
         Vertex* vertices = new Vertex[m_meshData.getVertexCount()];
         for (int i = 0; i < m_meshData.getVertexCount(); i++)
@@ -933,100 +911,20 @@ void GaussianTracer::createPlane()
         ));
         params.d_offsets = reinterpret_cast<Offset*>(d_offsets);
     }
-
-    Primitive p;
-    p.type          = "Plane";
-    p.index         = numberOfPlanes++;
-    p.position      = plane.getPosition();
-    p.rotation      = plane.getRotation();
-    p.scale         = plane.getScale();
-    p.instanceIndex = reflection_instances.size() - 1;
-	p.gas           = gas;
-
-    primitives.push_back(p);
-    params.has_reflection_objects = true;
 }
 
-void GaussianTracer::createSphere()
+void GaussianTracer::addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name)
 {
-    Sphere sphere = Sphere();
-    m_meshData.addMesh(sphere);
-	size_t mesh_count = m_meshData.getMeshCount();
-
-	OptixTraversableHandle gas = createGAS(sphere.getVertices(), sphere.getIndices());
-	OptixInstance          ias = createIAS(gas, sphere.getTransform());
-
-    reflection_instances.push_back(ias);
-
-    buildReflectionAccelationStructure();
-    updateParamsTraversableHandle();
-
-    {
-        Vertex* vertices = new Vertex[m_meshData.getVertexCount()];
-        for (int i = 0; i < m_meshData.getVertexCount(); i++)
-        {
-            vertices[i] = m_meshData.m_vertices[i];
-        }
-
-        CUdeviceptr d_vertices;
-        const size_t vertices_size = sizeof(Vertex) * m_meshData.getVertexCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_vertices), vertices_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_vertices),
-            vertices,
-            vertices_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_vertices = reinterpret_cast<Vertex*>(d_vertices);
-    }
-
-    {
-        uint3* primitives = new uint3[m_meshData.getPrimitiveCount()];
-        for (int i = 0; i < m_meshData.getPrimitiveCount(); i++)
-        {
-            primitives[i] = m_meshData.m_primitives[i];
-        }
-        CUdeviceptr d_mesh_primitives;
-        const size_t primitives_size = sizeof(uint3) * m_meshData.getPrimitiveCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_mesh_primitives), primitives_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_mesh_primitives),
-            primitives,
-            primitives_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_primitives = reinterpret_cast<uint3*>(d_mesh_primitives);
-    }
-
-    {
-        Offset* offsets = new Offset[m_meshData.getMeshCount()];
-        for (int i = 0; i < m_meshData.getMeshCount(); i++)
-        {
-            offsets[i] = m_meshData.m_offsets[i];
-        }
-        CUdeviceptr d_offsets;
-        const size_t offsets_size = sizeof(Offset) * m_meshData.getMeshCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_offsets), offsets_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_offsets),
-            offsets,
-            offsets_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_offsets = reinterpret_cast<Offset*>(d_offsets);
-    }
-
     Primitive p;
-    p.type          = "Sphere";
-    p.index         = numberOfSpheres++;
-    p.position      = sphere.getPosition();
-    p.rotation      = sphere.getRotation();
-    p.scale         = sphere.getScale();
+    p.type = geometry_name;
+    p.index = numberOfSpheres++;
+    p.position = geometry.getPosition();
+    p.rotation = geometry.getRotation();
+    p.scale = geometry.getScale();
     p.instanceIndex = reflection_instances.size() - 1;
-	p.gas           = gas;
+    p.gas = gas;
 
     primitives.push_back(p);
-    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex)
@@ -1059,6 +957,9 @@ void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitive
         numberOfPlanes--;
     else if (primitiveType == "Sphere")
         numberOfSpheres--;
+
+	if (numberOfPlanes + numberOfSpheres == 0)
+		params.has_reflection_objects = false;
 
     buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
