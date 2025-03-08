@@ -60,10 +60,8 @@ void GaussianTracer::setSize(unsigned int width, unsigned int height)
 void GaussianTracer::initializeOptix()
 {
 	createContext();
-	createGaussiansAS();
+	createGaussiansASV1();
     buildAccelationStructure();
-    //createSphere();
-    //createPlane();
 	createModule();
 	createProgramGroups();
 	createPipeline();
@@ -87,7 +85,134 @@ void GaussianTracer::createContext()
     m_context = context;
 }
 
-void GaussianTracer::createGaussiansAS()
+void GaussianTracer::createGaussiansASV1()
+{
+    const size_t vertices_size_in_bytes = vertices.size() * sizeof(float3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_vertices), vertices_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_vertices),
+        vertices.data(),
+        vertices_size_in_bytes,
+        cudaMemcpyHostToDevice
+    ));
+
+    const size_t indices_size_in_bytes = indices.size() * sizeof(unsigned int);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_indices), indices_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_indices),
+        indices.data(),
+        indices_size_in_bytes,
+        cudaMemcpyHostToDevice
+    ));
+
+    triangle_input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+    triangle_input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+    triangle_input.triangleArray.vertexStrideInBytes = sizeof(float3);
+    triangle_input.triangleArray.numVertices = static_cast<uint32_t>(vertices.size());
+    triangle_input.triangleArray.vertexBuffers = &d_vertices;
+
+    triangle_input.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+    triangle_input.triangleArray.indexStrideInBytes = sizeof(unsigned int) * 3;
+    triangle_input.triangleArray.numIndexTriplets = (unsigned int)indices.size() / 3;
+    triangle_input.triangleArray.indexBuffer = d_indices;
+
+    unsigned int triangleInputFlags[1] = { };
+    triangle_input.triangleArray.flags = triangleInputFlags;
+    triangle_input.triangleArray.numSbtRecords = 1;
+
+    OptixAccelBuildOptions accel_options = {};
+    accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
+    accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+    OptixAccelBufferSizes gas_buffer_sizes;
+    OPTIX_CHECK(optixAccelComputeMemoryUsage(
+        m_context,
+        &accel_options,
+        &triangle_input,
+        1,
+        &gas_buffer_sizes
+    ));
+
+    CUdeviceptr d_gas;
+    CUDA_CHECK(cudaMalloc((void**)&d_gas, gas_buffer_sizes.outputSizeInBytes));
+
+    CUdeviceptr d_temp_buffer;
+    CUDA_CHECK(cudaMalloc((void**)&d_temp_buffer, gas_buffer_sizes.tempSizeInBytes));
+
+    OptixTraversableHandle gas;
+
+    OPTIX_CHECK(optixAccelBuild(
+        m_context,
+        0,
+        &accel_options,
+        &triangle_input,
+        1,
+        d_temp_buffer,
+        gas_buffer_sizes.tempSizeInBytes,
+        d_gas,
+        gas_buffer_sizes.outputSizeInBytes,
+        &gas,
+        0,
+        0
+    ));
+
+    CUDA_CHECK(cudaStreamSynchronize(0));
+    CUDA_CHECK(cudaFree((void*)d_temp_buffer));
+
+    for (int i = 0; i < vertex_count; i++)
+    {
+        OptixInstance instance = {};
+
+        GaussianIndice gsIndex;
+
+        float x = m_gsData.m_particles[i].position.x;
+        float y = m_gsData.m_particles[i].position.y;
+        float z = m_gsData.m_particles[i].position.z;
+
+        float opacity = m_gsData.m_particles[i].opacity;
+        if (opacity > alpha_min) {
+            gsIndex.index = i;
+            m_gsIndice.push_back(gsIndex);
+        }
+        else
+            continue;
+
+        float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
+        float scale_0 = m_gsData.m_particles[i].scale.x;
+        float scale_1 = m_gsData.m_particles[i].scale.y;
+        float scale_2 = m_gsData.m_particles[i].scale.z;
+        float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
+        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+
+        float qw = m_gsData.m_particles[i].rotation.x;
+        float qx = m_gsData.m_particles[i].rotation.y;
+        float qy = m_gsData.m_particles[i].rotation.z;
+        float qz = m_gsData.m_particles[i].rotation.w;
+        glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
+        glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
+
+        glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+
+        glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+
+        float instance_transform[12] = {
+            transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+            transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+            transform[0][2], transform[1][2], transform[2][2], transform[3][2],
+        };
+
+        memcpy(instance.transform, instance_transform, sizeof(float) * 12);
+        instance.instanceId = i;
+        instance.visibilityMask = 255;
+        instance.sbtOffset = 0;
+        instance.flags = OPTIX_INSTANCE_FLAG_NONE;
+        instance.traversableHandle = gas;
+
+        instances.push_back(instance);
+    }
+}
+
+void GaussianTracer::createGaussiansASV2()
 {
     filterGaussians();
 
@@ -200,7 +325,7 @@ void GaussianTracer::createGaussiansAS()
     CUdeviceptr d_temp_buffer;
     CUDA_CHECK(cudaMalloc((void**)&d_temp_buffer, gas_buffer_sizes.tempSizeInBytes));
 
-	OptixTraversableHandle gas;
+    OptixTraversableHandle gas;
     OPTIX_CHECK(optixAccelBuild(
         m_context,
         0,

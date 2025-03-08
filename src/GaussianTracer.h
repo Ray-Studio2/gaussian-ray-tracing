@@ -69,7 +69,8 @@ private:
 	void createPipeline();
 	void createSBT();
 
-	void createGaussiansAS();
+	void createGaussiansASV1();
+	void createGaussiansASV2();
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
@@ -103,10 +104,6 @@ private:
 	OptixProgramGroup           hit_prog_group;
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
-
-	// Reflection optix
-	std::vector<OptixInstance> reflection_instances;
-	OptixTraversableHandle	   reflection_ias = 0;
 
 	Params* d_params;
 
