@@ -77,7 +77,7 @@ void initCamera()
 
 int main() 
 {
-	const std::string filename = "../../data/test.ply";
+	const std::string filename = "../../data/train.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = 1280;

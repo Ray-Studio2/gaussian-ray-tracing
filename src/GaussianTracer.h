@@ -17,6 +17,7 @@
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
+#include "geometry/Mesh.h"
 
 struct Primitive
 {
@@ -68,7 +69,8 @@ private:
 	void createPipeline();
 	void createSBT();
 
-	void createGaussiansAS();
+	void createGaussiansASV1();
+	void createGaussiansASV2();
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
@@ -82,11 +84,18 @@ private:
 	size_t						vertex_count;
 	float						alpha_min;
 
+	// Reflection data
+	MeshData					m_meshData;
+
 	// Optix state
 	OptixDeviceContext		   m_context;
 	OptixBuildInput			   triangle_input;
 	OptixTraversableHandle	   m_root;
 	std::vector<OptixInstance> instances;
+
+	// Reflection state
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle     reflection_ias = 0;
 
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;
@@ -95,10 +104,6 @@ private:
 	OptixProgramGroup           hit_prog_group;
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
-
-	// Reflection optix
-	std::vector<OptixInstance> reflection_instances;
-	OptixTraversableHandle	   reflection_ias = 0;
 
 	Params* d_params;
 
