@@ -33,7 +33,8 @@ struct Primitive
 enum ReflectionPrimitiveType
 {
 	PLANE = 0,
-	SPHERE
+	SPHERE,
+	CUSTOM
 };
 
 class GaussianTracer
