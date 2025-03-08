@@ -22,6 +22,7 @@ $ mkdir build
 $ cd build
 
 # Add optix directory.
+# On windows, the default installation path is C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0
 $ cmake -DOptiX_INSTALL_DIR="/path/to/optix" ..
 $ cmake --build .
 ```
@@ -29,7 +30,7 @@ $ cmake --build .
 ## Usage
 ```sh
 $ cd build
-$ gaussian-ray-tracing.exe
+$ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height height_value
 ```
 
 ### Keyboard shortcuts

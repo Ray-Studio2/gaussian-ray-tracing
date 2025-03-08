@@ -157,48 +157,6 @@ static __forceinline__ __device__ float3 trace(
 
 	float T_max = params.t_max;
 
-	if (params.visualize_hitcount) {
-		for (int i = 0; i < params.k; i++) {
-			prd.k_closest[i].t = params.t_max;
-			prd.k_closest[i].particleIndex = -1;
-		}
-
-		uint32_t u0, u1;
-		packPointer(&prd, u0, u1);
-
-		optixTrace(
-			handle,
-			ray_origin,
-			ray_direction,
-			t_curr,
-			params.t_max,
-			0.0f,
-			OptixVisibilityMask(1),
-			OPTIX_RAY_FLAG_NONE,
-			RAY_TYPE_RADIANCE,        // SBT offset
-			RAY_TYPE_COUNT,           // SBT stride
-			RAY_TYPE_RADIANCE,        // missSBTIndex
-			u0, u1
-		);
-
-		if (prd.hit_count == 0)
-			return make_float3(0, 0, 0);
-		else if (prd.hit_count < 20)
-			return make_float3(0.5, 0.5, 0);
-		else if (prd.hit_count < 40)
-			return make_float3(0.5, 0, 0.5);
-		else if (prd.hit_count < 60)
-			return make_float3(0, 0.5, 0.5);
-		else if (prd.hit_count < 80)
-			return make_float3(0.5, 0, 0);
-		else if (prd.hit_count < 100)
-			return make_float3(0, 0.5, 0);
-		else if (prd.hit_count < 150)
-			return make_float3(0, 0, 0.5);
-
-		return make_float3(0.5, 0.5, 0.5);
-	}
-
 	unsigned int step = 0;
 
 	uint32_t u0, u1;

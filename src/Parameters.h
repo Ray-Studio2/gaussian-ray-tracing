@@ -67,9 +67,6 @@ struct Params
 	OptixTraversableHandle handle;
 	GaussianParticle* d_particles;
 
-	// Debug
-	bool visualize_hitcount;
-
 	// Reflection
 	OptixTraversableHandle reflection_handle;
 	Vertex* d_vertices;
