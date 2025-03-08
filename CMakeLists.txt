@@ -51,6 +51,8 @@ include_directories(${GLFW_DIR}/include)
 include_directories(third_party/glad)
 include_directories(third_party)
 
+include_directories(third_party/ImGuiFileDialog)
+
 set(SHADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cu
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h
@@ -99,6 +101,7 @@ add_executable(
 	src/geometry/Mesh.h
 	src/geometry/Mesh.cpp
 	${IMGUI}
+	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
  )
 
 target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
