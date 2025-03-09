@@ -428,7 +428,13 @@ void GaussianTracer::createModule()
     pipeline_compile_options.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
     pipeline_compile_options.numPayloadValues = 2;
     pipeline_compile_options.numAttributeValues = 2;
+#if (OPTIX_VERSION < 80000)
+    // OPTIX_EXCEPTION_FLAG_DEBUG Removed in OptiX SDK 8.0.0.
     pipeline_compile_options.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG | OPTIX_EXCEPTION_FLAG_TRACE_DEPTH | OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
+#else
+    pipeline_compile_options.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG | OPTIX_EXCEPTION_FLAG_TRACE_DEPTH | OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
+#endif
+
     pipeline_compile_options.pipelineLaunchParamsVariableName = "params";
 
 	std::vector<char> ptx_code = readData("gaussian-tracing_generated_shader.cu.ptx");
