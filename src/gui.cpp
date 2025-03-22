@@ -131,23 +131,27 @@ void GUI::keyboardEvent()
 		glfwSetWindowShouldClose(glfwGetCurrentContext(), GLFW_TRUE);
 
 	if (ImGui::IsKeyPressed(ImGuiKey_A)) {
-		m_camera->setEye(m_camera->eye() + make_float3(0.01f * m_moveSpeed, 0.0f, 0.0f));
-        m_camera->setLookat(m_camera->lookat() + make_float3(0.01f * m_moveSpeed, 0.0f, 0.0f));
+        float3 right_move = m_u * 0.01f * m_moveSpeed;
+        m_camera->setEye(m_camera->eye() + right_move);
+        m_camera->setLookat(m_camera->lookat() + right_move);
         camera_changed = true;
-	}
-	if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-		m_camera->setEye(m_camera->eye() + make_float3(-0.01f * m_moveSpeed, 0.0f, 0.0f));
-		m_camera->setLookat(m_camera->lookat() + make_float3(-0.01f * m_moveSpeed, 0.0f, 0.0f));
-		camera_changed = true;
-	}
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+        float3 left_move = -m_u * 0.01f * m_moveSpeed;
+        m_camera->setEye(m_camera->eye() + left_move);
+        m_camera->setLookat(m_camera->lookat() + left_move);
+        camera_changed = true;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-        m_camera->setEye(m_camera->eye() + make_float3(0.0f, 0.0f, -0.01f * m_moveSpeed));
-        m_camera->setLookat(m_camera->lookat() + make_float3(0.0f, 0.0f, -0.01f * m_moveSpeed));
+        float3 forward_move = -m_v * 0.01f * m_moveSpeed;
+        m_camera->setEye(m_camera->eye() + forward_move);
+        m_camera->setLookat(m_camera->lookat() + forward_move);
         camera_changed = true;
     }
     if (ImGui::IsKeyPressed(ImGuiKey_S)) {
-        m_camera->setEye(m_camera->eye() + make_float3(0.0f, 0.0f, 0.01f * m_moveSpeed));
-        m_camera->setLookat(m_camera->lookat() + make_float3(0.0f, 0.0f, 0.01f * m_moveSpeed));
+        float3 back_move = m_v * 0.01f * m_moveSpeed;
+        m_camera->setEye(m_camera->eye() + back_move);
+        m_camera->setLookat(m_camera->lookat() + back_move);
         camera_changed = true;
     }
 
