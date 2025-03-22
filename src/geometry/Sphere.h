@@ -11,12 +11,10 @@
 class Sphere: public Mesh
 {
 public:
-    Sphere()
+    Sphere(float3 center)
     {
         createGeometry();
-        setPosition();
-        setRotation();
-        setScale();
+        setPosition(center);
     }
     ~Sphere() {}
 

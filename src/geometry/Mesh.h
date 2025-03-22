@@ -12,6 +12,7 @@ class Mesh
 {
 public:
 	Mesh() {}
+	Mesh(float3 center) {}
 	~Mesh() {};
 
 	std::vector<float3>& getVertices() { return vertices; }
@@ -44,44 +45,16 @@ public:
 	}
 
 protected:
-	std::mt19937 gen{ std::random_device{}() };
-
-	std::uniform_real_distribution<float> randomPosition{ -0.5f, 0.5f };
-	std::uniform_real_distribution<float> randomAngle{ glm::radians(-30.0f), glm::radians(30.0f) };
-
 	virtual void createGeometry() = 0;
 
-	void setPosition()
+	void setPosition(float3 center)
 	{
-		position = make_float3(randomPosition(gen), randomPosition(gen), randomPosition(gen));
-
-		// Fixed position and rotation
-		float tx = 0.0f;
-		float ty = 0.0f;
-		float tz = 5.0f;
+		// Fixed position to gaussian partices center.
+		float tx = center.x;
+		float ty = center.y;
+		float tz = center.z;
 
 		position = make_float3(tx, ty, tz);
-	}
-
-	// Degrees
-	void setRotation()
-	{
-		float rot_x = glm::degrees(randomAngle(gen));
-		float rot_y = glm::degrees(randomAngle(gen));
-		float rot_z = glm::degrees(randomAngle(gen));
-
-		rotation = make_float3(rot_x, rot_y, rot_z);
-
-		rot_x = 0.0f;
-		rot_y = 0.0f;
-		rot_z = 0.0f;
-
-		rotation = make_float3(rot_x, rot_y, rot_z);
-	}
-
-	void setScale()
-	{
-		scale = make_float3(1.0f, 1.0f, 1.0f);
 	}
 
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
