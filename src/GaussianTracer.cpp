@@ -629,7 +629,8 @@ void GaussianTracer::initParams()
     params.T_min              = 0.03f;
     params.alpha_min          = alpha_min;
     params.sh_degree_max      = 2;
-	params.reflection_handle = reflection_ias;
+	params.reflection_handle  = reflection_ias;
+    params.mode_fisheye       = false;
 
     {
         GaussianParticle* particles = new GaussianParticle[vertex_count];
@@ -656,6 +657,11 @@ void GaussianTracer::initParams()
 
 void GaussianTracer::render(CUDAOutputBuffer& output_buffer)
 {
+    if (params.mode_fisheye) {
+        CUDA_CHECK(cudaMemset(output_buffer.map(), 0, params.width * params.height * sizeof(uchar3)));
+        output_buffer.unmap();
+    }
+
     uchar3* result_buffer_data = output_buffer.map();
     params.output_buffer = result_buffer_data;
     CUDA_CHECK(cudaMemcpyAsync(
