@@ -28,12 +28,11 @@ public:
 	size_t getVertexCount() const;
 	size_t getPrimitiveCount() const;
 
-	/*void addMesh(Sphere& s);
-	void addMesh(Plane& p);*/
 	void addMesh(Mesh& p);
 
 	float3 transform_position(float3 position, glm::mat4 transform);
 	float3 transform_normal(float3 normal, glm::mat4 transform);
+	std::vector<Vertex> MeshData::transformed_vertices(glm::mat4 transform);
 
 	std::vector<Offset> m_offsets;
 	std::vector<Vertex> m_vertices;

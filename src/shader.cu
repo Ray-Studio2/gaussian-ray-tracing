@@ -180,9 +180,6 @@ static __forceinline__ __device__ float3 trace(
 		);
 	}
 
-	if (prd.hit_reflection_primitive) {
-		return make_float3(0.0f, 0.0f, 0.0f);
-	}
 
 	while (params.T_min < T && t_curr < params.t_max)
 	{
@@ -232,6 +229,13 @@ static __forceinline__ __device__ float3 trace(
 				T *= 1.0f - alpha_hit;
 			}
 		}
+	}
+
+	if (prd.hit_reflection_primitive) {
+		if (prd.t_hit_reflection < t_curr)
+			return make_float3(0.0f, 0.0f, 0.0f);
+		else
+			prd.hit_reflection_primitive = false;
 	}
 
 	return make_float3(L.x, L.y, L.z);

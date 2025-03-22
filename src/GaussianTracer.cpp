@@ -861,13 +861,14 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 	return instance;
 }
 
-void GaussianTracer::sendGeometryAttributesToDevice()
+void GaussianTracer::sendGeometryAttributesToDevice(glm::mat4 transform)
 {
     {
         Vertex* vertices = new Vertex[m_meshData.getVertexCount()];
+        std::vector<Vertex> transformed_vertices = m_meshData.transformed_vertices(transform);
         for (int i = 0; i < m_meshData.getVertexCount(); i++)
         {
-            vertices[i] = m_meshData.m_vertices[i];
+            vertices[i] = transformed_vertices[i];
         }
 
         CUdeviceptr d_vertices;
@@ -1005,4 +1006,6 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
 
 	buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
+
+    sendGeometryAttributesToDevice(transform);
 }

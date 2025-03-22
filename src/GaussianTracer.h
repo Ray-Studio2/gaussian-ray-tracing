@@ -78,7 +78,7 @@ private:
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
 
-	void sendGeometryAttributesToDevice();
+	void sendGeometryAttributesToDevice(glm::mat4 transform);
 	void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
 
 	void filterGaussians();
@@ -139,7 +139,7 @@ void GaussianTracer::createGeometry(std::string geometry_name)
 	buildReflectionAccelationStructure();
 	updateParamsTraversableHandle();
 
-	sendGeometryAttributesToDevice();
+	sendGeometryAttributesToDevice(geometry.getTransform());
 
 	addPrimitives(gas, geometry, geometry_name);
 

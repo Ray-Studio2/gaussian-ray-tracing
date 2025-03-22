@@ -100,8 +100,8 @@ add_executable(
 	src/geometry/Sphere.h
 	src/geometry/MeshData.h
 	src/geometry/MeshData.cpp
+	src/geometry/Mesh.h
 	${IMGUI}
-  src/geometry/Mesh.h
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
  )
 
