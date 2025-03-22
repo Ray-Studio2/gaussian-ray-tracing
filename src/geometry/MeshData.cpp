@@ -16,6 +16,19 @@ float3 MeshData::transform_normal(float3 normal, glm::mat4 transform)
 	return make_float3(transformed_normal.x, transformed_normal.y, transformed_normal.z);
 }
 
+
+std::vector<Vertex> MeshData::transformed_vertices(glm::mat4 transform)
+{
+	std::vector<Vertex> transformed_vertices;
+	for (size_t i = 0; i < m_vertices.size(); i++) {
+		Vertex vertex = m_vertices[i];
+		vertex.position = transform_position(vertex.position, transform);
+		vertex.normal = transform_normal(vertex.normal, transform);
+        transformed_vertices.push_back(vertex);
+	}
+	return transformed_vertices;
+}
+
 void MeshData::addMesh(Mesh& m)
 {
     std::vector<float3> vertices = m.getVertices();
@@ -32,7 +45,8 @@ void MeshData::addMesh(Mesh& m)
     }
 
     for (size_t i = 0; i < vertices.size(); i++) {
-		Vertex v = { transform_position(vertices[i], transform), transform_normal(normals[i], transform) };
+        //Vertex v = { transform_position(vertices[i], transform), transform_normal(normals[i], transform) };
+        Vertex v = { vertices[i], normals[i] };
 		m_vertices.push_back(v);
     }
 
