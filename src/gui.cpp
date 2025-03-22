@@ -122,6 +122,8 @@ void GUI::mouseEvent()
 
 			camera_changed = true;
 		}
+
+        reinitOrientationFromCamera();
     }
 }
 
@@ -196,6 +198,8 @@ void GUI::updateTracking(int x, int y)
     m_longitude = radians(fmod(degrees(m_longitude) - 0.5f * deltaX, 360.0f));
 
     updateCamera();
+
+    reinitOrientationFromCamera();
 }
 
 void GUI::updateCamera()
