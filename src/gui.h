@@ -5,6 +5,9 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "ImGuizmo/ImGuizmo.h"
 
 #if defined(_WIN32)
 #    ifndef WIN32_LEAN_AND_MEAN
@@ -137,4 +140,8 @@ private:
 	std::string remove_primitive_type = "";
 	size_t remove_instance_index      = 0;
 	size_t remove_primitive_index     = 0;
+
+	// ImGuizmo
+	ImGuizmo::OPERATION m_currentGizmoOperation = ImGuizmo::TRANSLATE;
+	ImGuizmo::MODE		m_currentGizmoMode = ImGuizmo::LOCAL;
 };
