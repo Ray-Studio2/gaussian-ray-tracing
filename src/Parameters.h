@@ -73,6 +73,9 @@ struct Params
 	Vertex* d_vertices;
 	uint3* d_primitives;
 	Offset* d_offsets;
+
+	// FishEye
+	bool mode_fisheye;
 };
 
 struct RayPayload

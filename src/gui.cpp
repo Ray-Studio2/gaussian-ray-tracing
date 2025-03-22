@@ -279,6 +279,22 @@ void GUI::renderPanel(GaussianTracer* tracer)
 
     ImGui::Spacing();
 
+    if (ImGui::CollapsingHeader("Camera Mode")) {
+        if (ImGui::RadioButton("Pinhole", !is_fisheye_mode)) {
+            is_fisheye_mode = false;
+            tracer->params.mode_fisheye = is_fisheye_mode;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::RadioButton("Fisheye", is_fisheye_mode)) {
+            is_fisheye_mode = true;
+            tracer->params.mode_fisheye = is_fisheye_mode;
+        }
+    }
+
+    ImGui::Spacing();
+
     if (ImGui::CollapsingHeader("Reflection"))
     {
 		if (ImGui::Button("Add Primitive"))
@@ -305,8 +321,6 @@ void GUI::renderPanel(GaussianTracer* tracer)
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                 std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
                 // action
-
-                
             }
             ImGuiFileDialog::Instance()->Close();
 
