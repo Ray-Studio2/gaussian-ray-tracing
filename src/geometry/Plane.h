@@ -15,6 +15,7 @@ public:
 	{
 		createGeometry();
 		setPosition(center);
+		setInitialTransform();
 	}
 	~Plane() {};
 

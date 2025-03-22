@@ -19,30 +19,7 @@ public:
 	std::vector<float3>& getNormals() { return normals; }
 	std::vector<unsigned int>& getIndices() { return indices; }
 
-	float3 getPosition() const { return position; }
-	float3 getRotation() const { return rotation; }		// Degrees
-	float3 getScale()    const { return scale; }
-
-	glm::mat4 getTransform() const {
-		float tx = position.x;
-		float ty = position.y;
-		float tz = position.z;
-
-		float yaw = rotation.x;
-		float pitch = rotation.y;
-		float roll = rotation.z;
-
-		glm::mat4 translation_mat = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
-
-		glm::mat4 Ryaw = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 Rpitch = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 Rroll = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 rotation_mat = Rroll * Rpitch * Ryaw;
-
-		glm::mat4 transform = translation_mat * rotation_mat;
-
-		return transform;
-	}
+	glm::mat4 getTransform() const { return m_transform; }
 
 protected:
 	virtual void createGeometry() = 0;
@@ -57,6 +34,18 @@ protected:
 		position = make_float3(tx, ty, tz);
 	}
 
+	void setInitialTransform()
+	{
+		glm::mat4 t       = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
+		glm::mat4 r_yaw   = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 r_pitch = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::mat4 r_roll  = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));\
+		glm::mat4 r		  = r_yaw * r_pitch * r_roll;
+		glm::mat4 s       = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
+		m_transform = t * r * s;
+	}
+
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
 
 	std::vector<float3>		  vertices = {};
@@ -64,6 +53,5 @@ protected:
 	std::vector<unsigned int> indices = {};
 
 	float3 position = make_float3(0.0f, 0.0f, 0.0f);
-	float3 rotation = make_float3(0.0f, 0.0f, 0.0f);
-	float3 scale = make_float3(1.0f, 1.0f, 1.0f);
+	glm::mat4 m_transform = glm::mat4(1.0f);
 };
