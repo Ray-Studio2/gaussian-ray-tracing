@@ -97,7 +97,7 @@ void GUI::eventHandler()
 void GUI::mouseEvent()
 {
     if (!ImGui::GetIO().WantCaptureMouse) {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
         {
             mouse_button = LEFT;
 			m_viewMode = EyeFixed;
@@ -324,23 +324,38 @@ void GUI::renderPanel(GaussianTracer* tracer)
 			std::string lbl = p.type + " " + std::to_string(p.index);
 			if (ImGui::TreeNode(lbl.c_str()))
 			{
-				// Translate
-                ImGui::Text("Translate:");
-                ImGui::SliderFloat("Tx", &p.position.x, -3.0f, 3.0f, "%.2f");
-				ImGui::SliderFloat("Ty", &p.position.y, -3.0f, 3.0f, "%.2f");
-				ImGui::SliderFloat("Tz", &p.position.z, -10.0f, 10.0f, "%.2f");
+                if (ImGui::RadioButton("Translation", m_currentGizmoOperation == ImGuizmo::TRANSLATE))
+                    m_currentGizmoOperation = ImGuizmo::TRANSLATE;
 
-				// Rotate
-				ImGui::Text("Rotate:");
-				ImGui::SliderFloat("Yaw",   &p.rotation.x, -180.0f, 180.0f, "%.2f");
-				ImGui::SliderFloat("Pitch", &p.rotation.y, -180.0f, 180.0f, "%.2f");
-				ImGui::SliderFloat("Roll",  &p.rotation.z, -180.0f, 180.0f, "%.2f");
+                if (ImGui::RadioButton("Rotation", m_currentGizmoOperation == ImGuizmo::ROTATE))
+                    m_currentGizmoOperation = ImGuizmo::ROTATE;
 
-				// Scale
-				ImGui::Text("Scale:");
-				ImGui::SliderFloat("Scale X", &p.scale.x, 0.1f, 2.0f, "%.2f");
-				ImGui::SliderFloat("Scale Y", &p.scale.y, 0.1f, 2.0f, "%.2f");
-				ImGui::SliderFloat("Scale Z", &p.scale.z, 0.1f, 2.0f, "%.2f");
+                if (ImGui::RadioButton("Scale", m_currentGizmoOperation == ImGuizmo::SCALE))
+                    m_currentGizmoOperation = ImGuizmo::SCALE;
+
+                ImGuizmo::BeginFrame();
+
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+                ImGuizmo::SetRect(0, 0, m_width, m_height);
+
+                glm::mat4 view = m_camera->getViewMatrix();
+                glm::mat4 proj = m_camera->getProjectionMatrix();
+                glm::mat4 model = p.transform;
+
+                bool manipulated = ImGuizmo::Manipulate(
+                    glm::value_ptr(view),
+                    glm::value_ptr(proj),
+                    m_currentGizmoOperation,
+                    m_currentGizmoMode,
+                    glm::value_ptr(model),
+                    nullptr,
+                    nullptr
+                );
+
+                if (manipulated) {
+					p.transform = model;
+                }
 
                 // Remove primitive
                 if (ImGui::Button("Remove"))

@@ -925,9 +925,7 @@ void GaussianTracer::addPrimitives(OptixTraversableHandle gas, Mesh& geometry, s
     Primitive p;
     p.type = geometry_name;
     p.index = numberOfSpheres++;
-    p.position = geometry.getPosition();
-    p.rotation = geometry.getRotation();
-    p.scale = geometry.getScale();
+	p.transform = geometry.getTransform();
     p.instanceIndex = reflection_instances.size() - 1;
     p.gas = gas;
 
@@ -979,14 +977,7 @@ void GaussianTracer::updateParamsTraversableHandle()
 
 void GaussianTracer::updateInstanceTransforms(Primitive& p)
 {
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(p.position.x, p.position.y, p.position.z));
-    glm::mat4 Ryaw        = glm::rotate(glm::mat4(1.0f), p.rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 Rpitch      = glm::rotate(glm::mat4(1.0f), p.rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 Rroll       = glm::rotate(glm::mat4(1.0f), p.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 rotation    = Rroll * Rpitch * Ryaw;
-	glm::mat4 scale       = glm::scale(glm::mat4(1.0f), glm::vec3(p.scale.x, p.scale.y, p.scale.z));
-
-	glm::mat4 transform = translation * rotation * scale;
+    glm::mat4 transform = p.transform;
 
     float instance_transform[12] = {
         transform[0][0], transform[1][0], transform[2][0], transform[3][0],

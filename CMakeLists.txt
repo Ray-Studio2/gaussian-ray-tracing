@@ -41,6 +41,7 @@ set(IMGUI
 	third_party/imgui/backends/imgui_impl_opengl3.cpp
 	third_party/imgui/imgui_demo.cpp
 	third_party/imgui/imgui_tables.cpp
+	third_party/ImGuizmo/ImGuizmo.cpp
 )
 
 include_directories(third_party/happly)
@@ -52,6 +53,7 @@ include_directories(third_party/glad)
 include_directories(third_party)
 
 include_directories(third_party/ImGuiFileDialog)
+
 
 set(SHADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cu

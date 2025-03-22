@@ -23,9 +23,7 @@ struct Primitive
 {
 	std::string			   type;
 	size_t				   index;
-	float3 				   position;	// tx, ty, tz
-	float3 				   rotation;	// yaw, pitch, roll
-	float3 				   scale;		// sx, sy, sz
+	glm::mat4			   transform;
 	size_t				   instanceIndex;
 	OptixTraversableHandle gas;
 };
@@ -128,7 +126,18 @@ private:
 template <typename T>
 void GaussianTracer::createGeometry(std::string geometry_name)
 {
-	T geometry = T();
+	float3 gaussianCenter = getGaussianCenter();
+	float3 cameraPosition = params.eye;
+	float cameraWeight = 0.75f;
+	float gaussianWeight = 1.0f - cameraWeight;
+
+	float3 midPoint = {
+		gaussianCenter.x * gaussianWeight + cameraPosition.x * cameraWeight,
+		gaussianCenter.y * gaussianWeight + cameraPosition.y * cameraWeight,
+		gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
+	};
+
+	T geometry = T(midPoint);
 	m_meshData.addMesh(geometry);
 
 	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());

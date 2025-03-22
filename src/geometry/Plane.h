@@ -11,12 +11,11 @@
 class Plane : public Mesh
 {
 public:
-	Plane()
+	Plane(float3 center)
 	{
 		createGeometry();
-		setPosition();
-		setRotation();
-		setScale();
+		setPosition(center);
+		setInitialTransform();
 	}
 	~Plane() {};
 
