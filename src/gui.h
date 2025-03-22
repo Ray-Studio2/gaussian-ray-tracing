@@ -144,4 +144,7 @@ private:
 	// ImGuizmo
 	ImGuizmo::OPERATION m_currentGizmoOperation = ImGuizmo::TRANSLATE;
 	ImGuizmo::MODE		m_currentGizmoMode = ImGuizmo::LOCAL;
+
+	// Camera mode
+	bool is_fisheye_mode = false;
 };
