@@ -14,6 +14,7 @@
 #include "geometry/Icosahedron.h"
 #include "geometry/Plane.h"
 #include "geometry/Sphere.h"
+#include "geometry/LoadMesh.h"
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
@@ -52,6 +53,9 @@ public:
 
 	template <typename T>
 	void createGeometry(std::string geometry_name);
+	template <typename T>
+	void createGeometry(std::string geometry_name, std::string filename);
+
 	void updateInstanceTransforms(Primitive& p);
 
 	std::vector<Primitive>& getPrimitives() { return primitives; }
@@ -138,6 +142,38 @@ void GaussianTracer::createGeometry(std::string geometry_name)
 	};
 
 	T geometry = T(midPoint);
+	m_meshData.addMesh(geometry);
+
+	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());
+	OptixInstance          ias = createIAS(gas, geometry.getTransform());
+
+	reflection_instances.push_back(ias);
+
+	buildReflectionAccelationStructure();
+	updateParamsTraversableHandle();
+
+	sendGeometryAttributesToDevice(geometry.getTransform());
+
+	addPrimitives(gas, geometry, geometry_name);
+
+	params.has_reflection_objects = true;
+}
+
+template <typename T>
+void GaussianTracer::createGeometry(std::string geometry_name, std::string filename)
+{
+	float3 gaussianCenter = getGaussianCenter();
+	float3 cameraPosition = params.eye;
+	float cameraWeight = 0.75f;
+	float gaussianWeight = 1.0f - cameraWeight;
+
+	float3 midPoint = {
+		gaussianCenter.x * gaussianWeight + cameraPosition.x * cameraWeight,
+		gaussianCenter.y * gaussianWeight + cameraPosition.y * cameraWeight,
+		gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
+	};
+
+	T geometry = T(midPoint, filename);
 	m_meshData.addMesh(geometry);
 
 	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());
