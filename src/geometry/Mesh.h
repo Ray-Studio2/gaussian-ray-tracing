@@ -13,6 +13,7 @@ class Mesh
 public:
 	Mesh() {}
 	Mesh(float3 center) {}
+	Mesh(float3 center, std::string filename) {}
 	~Mesh() {};
 
 	std::vector<float3>& getVertices() { return vertices; }

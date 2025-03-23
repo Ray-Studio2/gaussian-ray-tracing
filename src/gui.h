@@ -130,7 +130,7 @@ private:
 	MouseButton mouse_button = RELEASED;
 
 	// Primitives
-	const char* geometries[3] = { "Plane", "Sphere", "Custom" };
+	const char* geometries[3] = { "Plane", "Sphere", "Load" };
 	int			selected_geometry = 0;
 
 	bool open_file_dialog = false;

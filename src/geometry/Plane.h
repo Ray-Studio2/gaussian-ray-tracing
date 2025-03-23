@@ -17,6 +17,7 @@ public:
 		setPosition(center);
 		setInitialTransform();
 	}
+	Plane(float3 center, std::string filename) {}
 	~Plane() {};
 
 private:

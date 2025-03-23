@@ -17,6 +17,7 @@ public:
         setPosition(center);
 		setInitialTransform();
     }
+    Sphere(float3 center, std::string filename) {}
     ~Sphere() {}
 
 

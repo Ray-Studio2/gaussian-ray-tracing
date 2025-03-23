@@ -313,14 +313,14 @@ void GUI::renderPanel(GaussianTracer* tracer)
         if (open_file_dialog) {
             IGFD::FileDialogConfig config;
             config.path = ".";
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".ply, .obj", config);
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".obj", config);
         }
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-                // action
+
+                tracer->createGeometry<LoadMesh>(geometries[selected_geometry], filePathName);
             }
             ImGuiFileDialog::Instance()->Close();
 
