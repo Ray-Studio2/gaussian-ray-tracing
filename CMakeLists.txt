@@ -53,7 +53,7 @@ include_directories(third_party/glad)
 include_directories(third_party)
 
 include_directories(third_party/ImGuiFileDialog)
-
+include_directories(third_party/tinyobjloader)
 
 set(SHADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cu
@@ -103,6 +103,7 @@ add_executable(
 	src/geometry/MeshData.h
 	src/geometry/MeshData.cpp
 	src/geometry/Mesh.h
+	src/geometry/LoadMesh.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
  )
