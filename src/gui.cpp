@@ -123,6 +123,16 @@ void GUI::mouseEvent()
 			camera_changed = true;
 		}
 
+        ImGuiIO& io = ImGui::GetIO();
+        float delta = io.MouseWheel;
+        if (delta != 0.0f) {
+			float3 dir = normalize(m_camera->lookat() - m_camera->eye());
+			float3 delta_eye = delta * dir * 0.1f;
+			m_camera->setEye(m_camera->eye() + delta_eye);
+			m_camera->setLookat(m_camera->lookat() + delta_eye);
+			camera_changed = true;
+        }
+        
         reinitOrientationFromCamera();
     }
 }

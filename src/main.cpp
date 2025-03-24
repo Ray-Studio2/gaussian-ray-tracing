@@ -92,8 +92,6 @@ int main(int argc, char* argv[])
 
 		glfwPollEvents();
 
-		gui.eventHandler();
-
 		tracer.updateCamera(camera, gui.camera_changed);
 
 		auto t1 = std::chrono::steady_clock::now();
@@ -121,6 +119,7 @@ int main(int argc, char* argv[])
 		t0 = t1;
 
 		gui.beginFrame();
+		gui.eventHandler();
 		gui.renderGUI(&tracer, state_update_time, render_time, display_time);
 		gui.endFrame();
 
