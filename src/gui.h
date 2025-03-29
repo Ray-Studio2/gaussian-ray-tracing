@@ -45,14 +45,13 @@ enum ViewMode
 class GUI
 {
 public:
-	GUI();
+	GUI(GaussianTracer* tracer) { m_tracer = tracer; }
 	~GUI();
 
 	GLFWwindow* initUI(const char* window_title);
 	void beginFrame();
 	void endFrame();
 	void renderGUI(
-		GaussianTracer* tracer,
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
 		std::chrono::duration<double>& display_time
@@ -79,7 +78,7 @@ private:
 	}
 
 	// GUI functions
-	void renderPanel(GaussianTracer* tracer);
+	void renderPanel();
 	void displayText(
 		std::chrono::duration<double>& state_update_time,
 		std::chrono::duration<double>& render_time,
@@ -102,6 +101,8 @@ private:
 	// Helper functions
 	float radians(float degrees) { return degrees * M_PIf / 180.0f; }
 	float degrees(float radians) { return radians * 180.0f / M_PIf; }
+
+	GaussianTracer* m_tracer = nullptr;
 
 	// GUI variables
 	int m_width  = 0;
@@ -150,4 +151,7 @@ private:
 
 	// Camera mode
 	bool is_fisheye_mode = false;
+
+	// Reflection
+	bool reflection_render_normals = false;
 };
