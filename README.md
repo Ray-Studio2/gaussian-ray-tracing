@@ -1,7 +1,13 @@
-# 3D Gaussian Ray Tracing
-Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
+# 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes (Unofficial Implementation)
+This repository provides an unofficial implementation inspired by the paper **"3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"**. It may not fully reproduce all the results or optimizations presented in the original paper, and it currently contains some bugs that will be continuously addressed in future updates. Additionally, new features will be added over time. Note that training code has not been implemented yet; only a partial application described in the paper is available at this time.
 
-## Building gaussian-ray-tracing (Windows)
+## 🛩️ Features
+- **Supported File Format**: Only trained PLY files are supported.   
+- **Supported Modes**: Currently reflection and fisheye modes are available.   
+- **Gizmo Support**: Includes a gizmo for reflection primitive transform.   
+- **OBJ File Loading**: Supports loading OBJ files through a file dialog.
+
+## 🤖 Building gaussian-ray-tracing (Windows)
 ### Requirements
 - Requires an NVIDIA GPU; testing was conducted on an RTX 4090.
 - Visual Studio 2022
@@ -22,12 +28,18 @@ $ mkdir build
 $ cd build
 
 # Add optix directory.
-# On windows, the default installation path is C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0
+# On windows, the default Optix 7.7 installation path is C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0
 $ cmake -DOptiX_INSTALL_DIR="/path/to/optix" ..
 $ cmake --build .
 ```
 
-## Usage
+## 🦤 Examples
+### 🪞Reflection
+***4090에서 녹화 후 올릴 예정!***
+### 🎏 Fisheye
+***4090에서 녹화 후 올릴 예정!***
+
+## 🎠 Usage
 ```sh
 $ cd build
 $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height height_value
@@ -42,3 +54,9 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
 | N               | ON / OFF Rendering normals of reflection primitives. |
 | L Ctrl + P / S  | Add reflection primitives. |
 | V               | ON / OFF camera mode. (Pinhole / Fisheye) |
+
+## 🙇‍♂️ Acknowledgements
+This project was developed with reference to the following repositories and resources:
+- [WebGPU Gaussian Tracer](https://github.com/meta-plane/WebGPU-GaussianTracer)
+- [NVIDIA OptiX Apps](https://github.com/NVIDIA/OptiX_Apps)
+- OptiX SDK examples
