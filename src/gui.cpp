@@ -343,57 +343,83 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
 		ImGui::PopItemWidth();
 
+        ImGuizmo::BeginFrame();
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+        ImGuizmo::SetRect(0, 0, m_width, m_height);
+
+
+        glm::mat4 manipulated_model;
+        int manipulated_index = -1;
+
         for (Primitive& p : tracer->getPrimitives())
         {
-			std::string lbl = p.type + " " + std::to_string(p.index);
-			if (ImGui::TreeNode(lbl.c_str()))
-			{
-                if (ImGui::RadioButton("Translation", m_currentGizmoOperation == ImGuizmo::TRANSLATE))
-                    m_currentGizmoOperation = ImGuizmo::TRANSLATE;
+            std::string lbl = p.type + " " + std::to_string(p.index);
+            int node_id = p.index;
 
-                if (ImGui::RadioButton("Rotation", m_currentGizmoOperation == ImGuizmo::ROTATE))
-                    m_currentGizmoOperation = ImGuizmo::ROTATE;
+            if (close_node == node_id) {
+                ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+                close_node = -1;
+            }
 
-                if (ImGui::RadioButton("Scale", m_currentGizmoOperation == ImGuizmo::SCALE))
-                    m_currentGizmoOperation = ImGuizmo::SCALE;
+            ImGui::PushID(node_id);
+            if (ImGui::TreeNode(lbl.c_str())) {
+                if (current_node == node_id) {
+                    if (ImGui::RadioButton("Translation", m_currentGizmoOperation == ImGuizmo::TRANSLATE))
+                        m_currentGizmoOperation = ImGuizmo::TRANSLATE;
 
-                ImGuizmo::BeginFrame();
+                    if (ImGui::RadioButton("Rotation", m_currentGizmoOperation == ImGuizmo::ROTATE))
+                        m_currentGizmoOperation = ImGuizmo::ROTATE;
 
-                ImGuizmo::SetOrthographic(false);
-                ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
-                ImGuizmo::SetRect(0, 0, m_width, m_height);
+                    if (ImGui::RadioButton("Scale", m_currentGizmoOperation == ImGuizmo::SCALE))
+                        m_currentGizmoOperation = ImGuizmo::SCALE;
 
-                glm::mat4 view = m_camera->getViewMatrix();
-                glm::mat4 proj = m_camera->getProjectionMatrix();
-                glm::mat4 model = p.transform;
+                    manipulated_model = p.transform;
+                    manipulated_index = node_id;
 
-                bool manipulated = ImGuizmo::Manipulate(
-                    glm::value_ptr(view),
-                    glm::value_ptr(proj),
-                    m_currentGizmoOperation,
-                    m_currentGizmoMode,
-                    glm::value_ptr(model),
-                    nullptr,
-                    nullptr
-                );
+                    // Remove primitive
+                    if (ImGui::Button("Remove")) {
+                        remove_primitive_type = p.type;
+                        remove_primitive_index = p.index;
+                        remove_instance_index = p.instanceIndex;
+                        remove_primitive = true;
 
-                if (manipulated) {
-					p.transform = model;
+                        if (current_node == node_id)
+                            current_node = -1;
+                    }
                 }
-
-                // Remove primitive
-                if (ImGui::Button("Remove"))
-                {
-					remove_primitive_type  = p.type;
-					remove_primitive_index = p.index;
-					remove_instance_index  = p.instanceIndex;
-                    remove_primitive       = true;
+                else {
+                    close_node = current_node;
+                    current_node = node_id;
                 }
-
                 ImGui::TreePop();
-			}
+            }
+            ImGui::PopID();
+        }
 
-            tracer->updateInstanceTransforms(p);
+        if (manipulated_index >= 0) {
+            glm::mat4 view = m_camera->getViewMatrix();
+            glm::mat4 proj = m_camera->getProjectionMatrix();
+
+            bool manipulated = ImGuizmo::Manipulate(
+                glm::value_ptr(view),
+                glm::value_ptr(proj),
+                m_currentGizmoOperation,
+                m_currentGizmoMode,
+                glm::value_ptr(manipulated_model),
+                nullptr,
+                nullptr
+            );
+
+            if (manipulated) {
+                for (Primitive& p : tracer->getPrimitives()) {
+                    if (p.index == manipulated_index) {
+                        p.transform = manipulated_model;
+                        tracer->updateInstanceTransforms(p);
+                        break;
+                    }
+                }
+            }
         }
 
         if (remove_primitive)
