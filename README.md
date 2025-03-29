@@ -40,3 +40,5 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
 | Q / ESC         | Exit. |
 | R			      | Reset camera. |
 | N               | ON / OFF Rendering normals of reflection primitives. |
+| L Ctrl + P / S  | Add reflection primitives. |
+| V               | ON / OFF camera mode. (Pinhole / Fisheye) |
