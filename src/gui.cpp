@@ -3,10 +3,6 @@
 
 #include <ImGuiFileDialog.h>
 
-GUI::GUI()
-{
-}
-
 GUI::~GUI()
 {
 }
@@ -139,9 +135,11 @@ void GUI::mouseEvent()
 
 void GUI::keyboardEvent()
 {
+    // Exit
     if (ImGui::IsKeyPressed(ImGuiKey_Q) || ImGui::IsKeyPressed(ImGuiKey_Escape))
 		glfwSetWindowShouldClose(glfwGetCurrentContext(), GLFW_TRUE);
 
+	// Camera movement
 	if (ImGui::IsKeyPressed(ImGuiKey_A)) {
         float3 right_move = m_u * 0.01f * m_moveSpeed;
         m_camera->setEye(m_camera->eye() + right_move);
@@ -166,6 +164,26 @@ void GUI::keyboardEvent()
         m_camera->setLookat(m_camera->lookat() + back_move);
         camera_changed = true;
     }
+
+    // Add primitives
+	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_P)) {
+		m_tracer->createGeometry<Plane>(geometries[PLANE]);
+	}
+    else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
+		m_tracer->createGeometry<Sphere>(geometries[SPHERE]);
+    }
+
+    // Render reflection primitive normals
+	if (ImGui::IsKeyPressed(ImGuiKey_N)) {
+		reflection_render_normals = !reflection_render_normals;
+		m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
+    }
+
+	// Set camera mode
+	if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+		is_fisheye_mode = !is_fisheye_mode;
+		m_tracer->params.mode_fisheye = is_fisheye_mode;
+	}
 
 	// Reset camera
 	if (ImGui::IsKeyPressed(ImGuiKey_R)) {
@@ -260,17 +278,16 @@ void GUI::endFrame()
 }
 
 void GUI::renderGUI(
-    GaussianTracer* tracer,
     std::chrono::duration<double>& state_update_time,
     std::chrono::duration<double>& render_time,
     std::chrono::duration<double>& display_time
     )
 {
     displayText(state_update_time, render_time, display_time);
-    renderPanel(tracer);
+    renderPanel();
 }
 
-void GUI::renderPanel(GaussianTracer* tracer)
+void GUI::renderPanel()
 {
 	ImGui::SetNextWindowPos(ImVec2(m_width - 320.0f, 20));
     ImGui::SetNextWindowSize(ImVec2(300, m_height - 40));
@@ -280,9 +297,9 @@ void GUI::renderPanel(GaussianTracer* tracer)
 	{
         ImGui::PushItemWidth(100);
 
-		ImGui::SliderInt("Hit array size", &tracer->params.k, 1, 6);
-		ImGui::SliderFloat("Alpha min", &tracer->params.alpha_min, 0.01f, 0.2f);
-		ImGui::SliderFloat("T min", &tracer->params.T_min, 0.03f, 0.99f);
+		ImGui::SliderInt("Hit array size", &m_tracer->params.k, 1, 6);
+		ImGui::SliderFloat("Alpha min", &m_tracer->params.alpha_min, 0.01f, 0.2f);
+		ImGui::SliderFloat("T min", &m_tracer->params.T_min, 0.03f, 0.99f);
 
         ImGui::PopItemWidth();
 	}
@@ -292,14 +309,14 @@ void GUI::renderPanel(GaussianTracer* tracer)
     if (ImGui::CollapsingHeader("Camera Mode")) {
         if (ImGui::RadioButton("Pinhole", !is_fisheye_mode)) {
             is_fisheye_mode = false;
-            tracer->params.mode_fisheye = is_fisheye_mode;
+            m_tracer->params.mode_fisheye = is_fisheye_mode;
         }
 
         ImGui::SameLine();
 
         if (ImGui::RadioButton("Fisheye", is_fisheye_mode)) {
             is_fisheye_mode = true;
-            tracer->params.mode_fisheye = is_fisheye_mode;
+            m_tracer->params.mode_fisheye = is_fisheye_mode;
         }
     }
 
@@ -310,10 +327,10 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		if (ImGui::Button("Add Primitive"))
 		{
             if (selected_geometry == PLANE) {
-				tracer->createGeometry<Plane>(geometries[selected_geometry]);
+                m_tracer->createGeometry<Plane>(geometries[selected_geometry]);
             }
             else if (selected_geometry == SPHERE) {
-                tracer->createGeometry<Sphere>(geometries[selected_geometry]);
+                m_tracer->createGeometry<Sphere>(geometries[selected_geometry]);
             }
             else if (selected_geometry == CUSTOM) {
 				open_file_dialog = true;
@@ -330,7 +347,7 @@ void GUI::renderPanel(GaussianTracer* tracer)
             if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                tracer->createGeometry<LoadMesh>(geometries[selected_geometry], filePathName);
+                m_tracer->createGeometry<LoadMesh>(geometries[selected_geometry], filePathName);
             }
             ImGuiFileDialog::Instance()->Close();
 
@@ -343,16 +360,21 @@ void GUI::renderPanel(GaussianTracer* tracer)
 		ImGui::Combo("Primitive Type", &selected_geometry, geometries, IM_ARRAYSIZE(geometries));
 		ImGui::PopItemWidth();
 
+        ImGui::Spacing();
+
+        if (ImGui::Checkbox("Render Normals", &reflection_render_normals)) {
+            m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
+        }
+
         ImGuizmo::BeginFrame();
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
         ImGuizmo::SetRect(0, 0, m_width, m_height);
 
-
         glm::mat4 manipulated_model;
         int manipulated_index = -1;
 
-        for (Primitive& p : tracer->getPrimitives())
+        for (Primitive& p : m_tracer->getPrimitives())
         {
             std::string lbl = p.type + " " + std::to_string(p.index);
             int node_id = p.index;
@@ -412,10 +434,10 @@ void GUI::renderPanel(GaussianTracer* tracer)
             );
 
             if (manipulated) {
-                for (Primitive& p : tracer->getPrimitives()) {
+                for (Primitive& p : m_tracer->getPrimitives()) {
                     if (p.index == manipulated_index) {
                         p.transform = manipulated_model;
-                        tracer->updateInstanceTransforms(p);
+                        m_tracer->updateInstanceTransforms(p);
                         break;
                     }
                 }
@@ -424,7 +446,7 @@ void GUI::renderPanel(GaussianTracer* tracer)
 
         if (remove_primitive)
         {
-            tracer->removePrimitive(remove_primitive_type, remove_primitive_index, remove_instance_index);
+            m_tracer->removePrimitive(remove_primitive_type, remove_primitive_index, remove_instance_index);
             remove_primitive = false;
         }
     }

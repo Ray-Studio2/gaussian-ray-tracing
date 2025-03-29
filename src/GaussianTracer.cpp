@@ -621,16 +621,17 @@ void GaussianTracer::createSBT()
 
 void GaussianTracer::initParams()
 {
-	params.output_buffer      = nullptr;
-	params.handle             = m_root;
-    params.k                  = MAX_K;
-    params.t_min              = 1e-3f;
-    params.t_max              = 1e5f;
-    params.T_min              = 0.03f;
-    params.alpha_min          = alpha_min;
-    params.sh_degree_max      = 2;
-	params.reflection_handle  = reflection_ias;
-    params.mode_fisheye       = false;
+	params.output_buffer             = nullptr;
+	params.handle                    = m_root;
+    params.k                         = MAX_K;
+    params.t_min                     = 1e-3f;
+    params.t_max                     = 1e5f;
+    params.T_min                     = 0.03f;
+    params.alpha_min                 = alpha_min;
+    params.sh_degree_max             = 2;
+	params.reflection_handle         = reflection_ias;
+    params.reflection_render_normals = false;
+    params.mode_fisheye              = false;
 
     {
         GaussianParticle* particles = new GaussianParticle[vertex_count];
@@ -1005,4 +1006,9 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
     updateParamsTraversableHandle();
 
     sendGeometryAttributesToDevice(transform);
+}
+
+void GaussianTracer::setReflectionMeshRenderNormal(bool val)
+{
+    params.reflection_render_normals = val;
 }

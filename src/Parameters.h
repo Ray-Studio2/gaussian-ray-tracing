@@ -73,6 +73,7 @@ struct Params
 	Vertex* d_vertices;
 	uint3* d_primitives;
 	Offset* d_offsets;
+	bool reflection_render_normals;
 
 	// FishEye
 	bool mode_fisheye;

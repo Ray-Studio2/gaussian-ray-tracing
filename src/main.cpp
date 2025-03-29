@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 
-	std::string filename = ply_flag ? args::get(ply_flag) : "../data/train.ply";
+	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = width_flag ? args::get(width_flag) : 1280;
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 	tracer.setSize(width, height);
 	tracer.initializeOptix();
 
-	GUI gui;
+	GUI gui(&tracer);
 	gui.setSize(width, height);
 	GLFWwindow* window = gui.initUI("Gaussian Tracer");
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 
 		gui.beginFrame();
 		gui.eventHandler();
-		gui.renderGUI(&tracer, state_update_time, render_time, display_time);
+		gui.renderGUI(state_update_time, render_time, display_time);
 		gui.endFrame();
 
 		glfwSwapBuffers(window);

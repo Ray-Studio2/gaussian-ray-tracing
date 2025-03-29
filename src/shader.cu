@@ -299,6 +299,10 @@ extern "C" __global__ void __raygen__raygeneration()
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
+		if (params.reflection_render_normals) {
+			result = (prd.reflection_vertex.normal + 1) / 2;
+			break;
+		}
 		/*else {
 			result = (prd.reflection_vertex.normal+1)/2;
 			break;
