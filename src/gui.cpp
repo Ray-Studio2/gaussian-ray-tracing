@@ -179,6 +179,12 @@ void GUI::keyboardEvent()
 		m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
     }
 
+	// Set camera mode
+	if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+		is_fisheye_mode = !is_fisheye_mode;
+		m_tracer->params.mode_fisheye = is_fisheye_mode;
+	}
+
 	// Reset camera
 	if (ImGui::IsKeyPressed(ImGuiKey_R)) {
         resetCamera();
