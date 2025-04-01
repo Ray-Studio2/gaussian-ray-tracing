@@ -159,7 +159,7 @@ static __forceinline__ __device__ float3 trace(
 
 	unsigned int step = 0;
 
-	if (params.has_reflection_objects)
+	if (true)
 	{
 		uint32_t u0, u1;
 		packPointer(&prd, u0, u1);
@@ -179,7 +179,6 @@ static __forceinline__ __device__ float3 trace(
 			u0, u1
 		);
 	}
-
 
 	while (params.T_min < T && t_curr < params.t_max)
 	{
@@ -299,21 +298,17 @@ extern "C" __global__ void __raygen__raygeneration()
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
-		if (params.reflection_render_normals) {
-			result = (prd.reflection_vertex.normal + 1) / 2;
+		else {
+			result = (prd.reflect_prim_normals + 1.0f) / 2.0f;
 			break;
 		}
-		/*else {
-			result = (prd.reflection_vertex.normal+1)/2;
-			break;
-		}*/
-		const Vertex hit_point = prd.reflection_vertex;
-		if (length(hit_point.position - ray_origin) < 1e-6){
-			break;
-		}
-		ray_origin = hit_point.position;
-		ray_direction = reflect(ray_direction, hit_point.normal);
-		recursion_count++;
+		//const Vertex hit_point = prd.reflection_vertex;
+		//if (length(hit_point.position - ray_origin) < 1e-6){
+		//	break;
+		//}
+		//ray_origin = hit_point.position;
+		//ray_direction = reflect(ray_direction, hit_point.normal);
+		//recursion_count++;
 	}
 
 	const uint3    launch_index = optixGetLaunchIndex();
@@ -364,33 +359,55 @@ extern "C" __global__ void __closesthit__closesthit()
 	prd.hit_reflection_primitive = true;
 	prd.t_hit_reflection = optixGetRayTmax();
 
+	unsigned int mesh_index = 0;
+	Mesh mesh = params.d_meshes[mesh_index];
+	
 	unsigned int primitive_index = optixGetPrimitiveIndex();
-	unsigned int mesh_index = optixGetInstanceId();
-	
-	Offset offset = params.d_offsets[mesh_index];
-	uint3 hit_primitive = params.d_primitives[offset.primitive_offset + primitive_index];
-	
-	Vertex v0 = params.d_vertices[offset.vertex_offset + hit_primitive.x];
-	Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
-	Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
+	//I i = mesh.is[primitive_index];
 
-	float3 p0 = v0.position;
-	float3 p1 = v1.position;
-	float3 p2 = v2.position;
+	//V v0 = mesh.vs[i.indices.x];
+	//V v1 = mesh.vs[i.indices.y];
+	//V v2 = mesh.vs[i.indices.z];
 
-	float3 n0 = v0.normal;
-	float3 n1 = v1.normal;
-	float3 n2 = v2.normal;
+	//float3 normal = v0.normals;
+	//prd.reflect_prim_normals = normal;
 
-	float2 barycentrics = optixGetTriangleBarycentrics();
+	Face face = mesh.faces[primitive_index];
+	Vertex v0 = mesh.vertices[face.indices.x];
+	Vertex v1 = mesh.vertices[face.indices.y];
+	Vertex v2 = mesh.vertices[face.indices.z];
 
-	float w0 = 1.0f - barycentrics.x - barycentrics.y;
-	float w1 = barycentrics.x;
-	float w2 = barycentrics.y;
+	prd.reflect_prim_normals = v0.normal;
 
-	float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
-	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
+	//printf("normal: %f %f %f\n", prd.reflect_prim_normals.x, prd.reflect_prim_normals.y, prd.reflect_prim_normals.z);
+	//printf("vertex: %f %f %f\n", v0.position.x, v0.position.y, v0.position.z);
 
-	prd.reflection_vertex.position = hit_position;
-	prd.reflection_vertex.normal = hit_normal;
+	//unsigned int mesh_index = optixGetInstanceId();
+	//
+	//Offset offset = params.d_offsets[mesh_index];
+	//uint3 hit_primitive = params.d_primitives[offset.primitive_offset + primitive_index];
+	//
+	//Vertex v0 = params.d_vertices[offset.vertex_offset + hit_primitive.x];
+	//Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
+	//Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
+
+	//float3 p0 = v0.position;
+	//float3 p1 = v1.position;
+	//float3 p2 = v2.position;
+
+	//float3 n0 = v0.normal;
+	//float3 n1 = v1.normal;
+	//float3 n2 = v2.normal;
+
+	//float2 barycentrics = optixGetTriangleBarycentrics();
+
+	//float w0 = 1.0f - barycentrics.x - barycentrics.y;
+	//float w1 = barycentrics.x;
+	//float w2 = barycentrics.y;
+
+	//float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
+	//float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
+
+	//prd.reflection_vertex.position = hit_position;
+	//prd.reflection_vertex.normal = hit_normal;
 }

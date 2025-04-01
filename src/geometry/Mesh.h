@@ -40,7 +40,7 @@ protected:
 		glm::mat4 t       = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
 		glm::mat4 r_yaw   = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 r_pitch = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 r_roll  = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));\
+		glm::mat4 r_roll  = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 r		  = r_yaw * r_pitch * r_roll;
 		glm::mat4 s       = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 

@@ -5,7 +5,8 @@
 #include <vector_functions.h>
 
 #include "GaussianData.h"
-#include "geometry/MeshData.h"
+//#include "geometry/MeshData.h"
+#include "geometry/Primitives.h"
 
 #define MAX_K 6
 #define SH_C0     0.28209479177387814f
@@ -31,6 +32,7 @@ enum RayType
 
 struct RayGenData { };
 struct MissData   { };
+struct HitData    { };
 
 template <typename T>
 struct Record
@@ -43,6 +45,23 @@ struct HitInfo
 {
 	float t;
 	int particleIndex;
+};
+
+struct Vertex
+{
+	float3 position;
+	float3 normal;
+};
+
+struct Face
+{
+	uint3 indices;
+};
+
+struct Mesh
+{
+	Vertex* vertices;
+	Face*   faces;
 };
 
 struct Params
@@ -71,12 +90,14 @@ struct Params
 	OptixTraversableHandle reflection_handle;
 	bool has_reflection_objects;
 	Vertex* d_vertices;
-	uint3* d_primitives;
-	Offset* d_offsets;
+	//uint3* d_primitives;
+	//Offset* d_offsets;
 	bool reflection_render_normals;
 
 	// FishEye
 	bool mode_fisheye;
+
+	Mesh* d_meshes;
 };
 
 struct RayPayload
@@ -86,7 +107,8 @@ struct RayPayload
 
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
-	Vertex reflection_vertex;
+	//Vertex reflection_vertex;
+	float3 reflect_prim_normals;
 };
 
 struct GaussianIndice
@@ -94,6 +116,8 @@ struct GaussianIndice
 	size_t index;
 };
 
+
+
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
-typedef Record<GaussianIndice> HitRecord;
+typedef Record<HitData>    HitRecord;

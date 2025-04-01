@@ -106,6 +106,7 @@ add_executable(
 	src/geometry/LoadMesh.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
+	src/geometry/Primitives.cpp
  )
 
 target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
