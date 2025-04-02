@@ -28,6 +28,7 @@ public:
 
 	Primitive createPlane(float3 position);
 	Primitive createSphere(float3 position);
+	Primitive createLoadMesh();
 
 	size_t getMeshCount() const { return m_primitive_count; }
 

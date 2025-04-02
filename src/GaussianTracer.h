@@ -72,6 +72,7 @@ public:
 	Primitives* primitives = new Primitives();
 	void createPlane();
 	void createSphere();
+	void createLoadMesh(std::string filename);
 
 private:
 	void createContext();
