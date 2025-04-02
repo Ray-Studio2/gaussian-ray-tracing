@@ -327,11 +327,9 @@ void GUI::renderPanel()
 		if (ImGui::Button("Add Primitive"))
 		{
             if (selected_geometry == PLANE) {
-                //m_tracer->createGeometry<Plane>(geometries[selected_geometry]);
                 m_tracer->createPlane();
             }
             else if (selected_geometry == SPHERE) {
-                //m_tracer->createGeometry<Sphere>(geometries[selected_geometry]);
                 m_tracer->createSphere();
             }
             else if (selected_geometry == CUSTOM) {
@@ -349,7 +347,7 @@ void GUI::renderPanel()
             if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                //m_tracer->createGeometry<LoadMesh>(geometries[selected_geometry], filePathName);
+				m_tracer->createLoadMesh(filePathName);
             }
             ImGuiFileDialog::Instance()->Close();
 
@@ -376,6 +374,64 @@ void GUI::renderPanel()
         glm::mat4 manipulated_model;
         int manipulated_index = -1;
 
+        for (Primitive& p : m_tracer->getPrimitives()) {
+            std::string lbl = p.type + " " + std::to_string(p.index);
+            int node_id = p.index;
+
+            if (close_node == node_id) {
+                ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+                close_node = -1;
+            }
+
+            ImGui::PushID(node_id);
+            if (ImGui::TreeNode(lbl.c_str())) {
+                if (current_node == node_id) {
+                    if (ImGui::RadioButton("Translation", m_currentGizmoOperation == ImGuizmo::TRANSLATE))
+                        m_currentGizmoOperation = ImGuizmo::TRANSLATE;
+
+                    if (ImGui::RadioButton("Rotation", m_currentGizmoOperation == ImGuizmo::ROTATE))
+                        m_currentGizmoOperation = ImGuizmo::ROTATE;
+
+                    if (ImGui::RadioButton("Scale", m_currentGizmoOperation == ImGuizmo::SCALE))
+                        m_currentGizmoOperation = ImGuizmo::SCALE;
+
+                    manipulated_model = p.transform;
+                    manipulated_index = node_id;
+                }
+                else {
+                    close_node = current_node;
+                    current_node = node_id;
+                }
+                ImGui::TreePop();
+            }
+            ImGui::PopID();
+        }
+
+        if (manipulated_index >= 0) {
+            glm::mat4 view = m_camera->getViewMatrix();
+            glm::mat4 proj = m_camera->getProjectionMatrix();
+
+            bool manipulated = ImGuizmo::Manipulate(
+                glm::value_ptr(view),
+                glm::value_ptr(proj),
+                m_currentGizmoOperation,
+                m_currentGizmoMode,
+                glm::value_ptr(manipulated_model),
+                nullptr,
+                nullptr
+            );
+
+            if (manipulated) {
+                for (Primitive& p : m_tracer->getPrimitives()) {
+                    if (p.index == manipulated_index) {
+                        p.transform = manipulated_model;
+                        m_tracer->updateInstanceTransforms(p);
+                        break;
+                    }
+                }
+            }
+        }
+             
     //    for (Primitive& p : m_tracer->getPrimitives())
     //    {
     //        std::string lbl = p.type + " " + std::to_string(p.index);

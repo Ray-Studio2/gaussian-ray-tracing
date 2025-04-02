@@ -60,7 +60,7 @@ public:
 
 	void updateInstanceTransforms(Primitive& p);
 
-	//std::vector<Primitive>& getPrimitives() { return primitives; }
+	std::vector<Primitive>& getPrimitives() { return primitives->getPrimitives(); }
 	void removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex);
 
 	void setReflectionMeshRenderNormal(bool val);

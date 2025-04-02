@@ -103,7 +103,7 @@ add_executable(
 	src/geometry/MeshData.h
 	src/geometry/MeshData.cpp
 	src/geometry/Mesh.h
-	src/geometry/LoadMesh.cpp
+	#src/geometry/LoadMesh.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
 	src/geometry/Primitives.cpp

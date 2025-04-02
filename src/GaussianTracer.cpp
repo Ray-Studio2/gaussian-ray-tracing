@@ -1024,6 +1024,8 @@ void GaussianTracer::createPlane()
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
 
+	p.gas = gas;
+
     reflection_instances.push_back(ias);
 
     buildReflectionAccelationStructure();
@@ -1049,6 +1051,8 @@ void GaussianTracer::createSphere()
 
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
+    
+    p.gas = gas;
 
     reflection_instances.push_back(ias);
 
@@ -1071,10 +1075,12 @@ void GaussianTracer::createLoadMesh(std::string filename)
         gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
     };
 
-    Primitive p = primitives->createSphere(midPoint);
+    Primitive p = primitives->createLoadMesh(filename, midPoint);
 
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
+
+    p.gas = gas;
 
     reflection_instances.push_back(ias);
 
@@ -1142,4 +1148,31 @@ void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
 	));
 
 	params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
+}
+
+void GaussianTracer::updateInstanceTransforms(Primitive& p)
+{
+    glm::mat4 transform = p.transform;
+
+    float instance_transform[12] = {
+        transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+        transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+        transform[0][2], transform[1][2], transform[2][2], transform[3][2]
+    };
+
+    OptixInstance instance = {};
+    memcpy(instance.transform, instance_transform, sizeof(float) * 12);
+	instance.instanceId        = p.instanceIndex;
+    instance.visibilityMask    = 255;
+    instance.sbtOffset         = 0;
+    instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
+    instance.traversableHandle = p.gas;
+
+	reflection_instances[p.instanceIndex] = instance;
+
+	buildReflectionAccelationStructure();
+    updateParamsTraversableHandle();
+
+    //sendGeometryAttributesToDevice(transform);
+    sendGeometryAttributesToDevice(p);
 }
