@@ -332,6 +332,7 @@ void GUI::renderPanel()
             }
             else if (selected_geometry == SPHERE) {
                 //m_tracer->createGeometry<Sphere>(geometries[selected_geometry]);
+                m_tracer->createSphere();
             }
             else if (selected_geometry == CUSTOM) {
 				open_file_dialog = true;

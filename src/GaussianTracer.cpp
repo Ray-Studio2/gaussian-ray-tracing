@@ -852,7 +852,7 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 	OptixInstance instance = {};
 	memcpy(instance.transform, instance_transform, sizeof(float) * 12);
     //instance.instanceId = m_meshData.getMeshCount()-1;
-	instance.instanceId        = instances.size() + 1;
+	instance.instanceId        = primitives->getMeshCount() - 1;
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
@@ -1029,15 +1029,47 @@ void GaussianTracer::createPlane()
     buildReflectionAccelationStructure();
     updateParamsTraversableHandle();   
 
+	sendGeometryAttributesToDevice(p);
+}
+
+void GaussianTracer::createSphere()
+{
+    float3 gaussianCenter = getGaussianCenter();
+    float3 cameraPosition = params.eye;
+    float cameraWeight = 0.75f;
+    float gaussianWeight = 1.0f - cameraWeight;
+
+    float3 midPoint = {
+        gaussianCenter.x * gaussianWeight + cameraPosition.x * cameraWeight,
+        gaussianCenter.y * gaussianWeight + cameraPosition.y * cameraWeight,
+        gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
+    };
+
+    Primitive p = primitives->createSphere(midPoint);
+
+    OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
+    OptixInstance          ias = createIAS(gas, p.transform);
+
+    reflection_instances.push_back(ias);
+
+    buildReflectionAccelationStructure();
+    updateParamsTraversableHandle();
+
+    sendGeometryAttributesToDevice(p);
+}
+
+void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
+{
     size_t vertex_count = p.vertex_count;
     Vertex* _vertices = new Vertex[vertex_count];
-	for (int i = 0; i < vertex_count; i++) {
+    for (int i = 0; i < vertex_count; i++) {
         Vertex v;
-		v.position = p.vertices[i];
-		v.normal   = p.normals[i];
+		// TODO: if p.transform is updated, the normals should be transformed.
+        v.position = p.vertices[i];
+        v.normal = p.normals[i];
 
         _vertices[i] = v;
-	}
+    }
 
     CUdeviceptr _d_vertices;
     const size_t vertices_size = sizeof(Vertex) * vertex_count;
@@ -1067,18 +1099,21 @@ void GaussianTracer::createPlane()
         cudaMemcpyHostToDevice
     ));
 
-    Mesh mesh;
-    mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
-    mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+	Mesh mesh;
+	mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
+	mesh.faces = reinterpret_cast<Face*>(d_face_indices);
 
-    CUdeviceptr d_meshes;
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_meshes), sizeof(Mesh)));
-    CUDA_CHECK(cudaMemcpy(
-        reinterpret_cast<void*>(d_meshes),
-        &mesh,
-        sizeof(Mesh),
-        cudaMemcpyHostToDevice
-    ));
+	meshes.push_back(mesh);
 
-    params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
+	CUdeviceptr d_meshes;
+	const size_t mesh_size = sizeof(Mesh) * meshes.size();
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_meshes), mesh_size));
+	CUDA_CHECK(cudaMemcpy(
+		reinterpret_cast<void*>(d_meshes),
+		meshes.data(),
+        mesh_size,
+		cudaMemcpyHostToDevice
+	));
+
+	params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
 }

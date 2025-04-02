@@ -27,6 +27,9 @@ public:
 	~Primitives() {}
 
 	Primitive createPlane(float3 position);
+	Primitive createSphere(float3 position);
+
+	size_t getMeshCount() const { return m_primitive_count; }
 
 private:
 	glm::mat4 getInitialTransform(float3 position);

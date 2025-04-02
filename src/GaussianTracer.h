@@ -71,6 +71,7 @@ public:
 	// Primitives
 	Primitives* primitives = new Primitives();
 	void createPlane();
+	void createSphere();
 
 private:
 	void createContext();
@@ -88,8 +89,10 @@ private:
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
 
-	void sendGeometryAttributesToDevice(glm::mat4 transform);
-	void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
+	//void sendGeometryAttributesToDevice(glm::mat4 transform);
+	//void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
+
+	void sendGeometryAttributesToDevice(Primitive p);
 
 	void filterGaussians();
 
@@ -128,8 +131,8 @@ private:
 	CUdeviceptr               d_vertices;
 	CUdeviceptr               d_indices;
 
-	// Reflection Primitives
-	std::vector<Primitive> primitives_list;
+	// Reflection meshes
+	std::vector<Mesh> meshes;
 
 	//std::vector<Primitive> primitives;
 	//unsigned int		   numberOfPlanes  = 0;

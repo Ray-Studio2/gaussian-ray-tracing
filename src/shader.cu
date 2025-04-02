@@ -359,7 +359,7 @@ extern "C" __global__ void __closesthit__closesthit()
 	prd.hit_reflection_primitive = true;
 	prd.t_hit_reflection = optixGetRayTmax();
 
-	unsigned int mesh_index = 0;
+	unsigned int mesh_index = optixGetInstanceId();
 	Mesh mesh = params.d_meshes[mesh_index];
 	
 	unsigned int primitive_index = optixGetPrimitiveIndex();
