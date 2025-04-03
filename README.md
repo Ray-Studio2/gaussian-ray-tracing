@@ -63,8 +63,10 @@ This project was developed with reference to the following repositories and reso
 
 ## 📒ToDo list
 - Gaussian Rendering Issue Improvement   
+- Add support Gaussian particles SH
 - Remove Individual Meshes   
 - Add Refraction Feature   
 - Code Refactoring   
-- Miscellaneous Bug Fixes
+- Miscellaneous Bug Fixes   
 - Fix the OBJ loader (match the current scene’s scale, resolve normal issues)
+- ...
