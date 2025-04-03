@@ -136,12 +136,6 @@ private:
 
 	bool open_file_dialog = false;
 
-	// Remove flag
-	bool remove_primitive             = false;
-	std::string remove_primitive_type = "";
-	size_t remove_instance_index      = 0;
-	size_t remove_primitive_index     = 0;
-
 	// ImGuizmo
 	ImGuizmo::OPERATION m_currentGizmoOperation = ImGuizmo::TRANSLATE;
 	ImGuizmo::MODE		m_currentGizmoMode = ImGuizmo::LOCAL;

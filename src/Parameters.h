@@ -5,7 +5,6 @@
 #include <vector_functions.h>
 
 #include "GaussianData.h"
-//#include "geometry/MeshData.h"
 #include "geometry/Primitives.h"
 
 #define MAX_K 6
@@ -89,9 +88,6 @@ struct Params
 	// Reflection
 	OptixTraversableHandle reflection_handle;
 	bool has_reflection_objects;
-	Vertex* d_vertices;
-	//uint3* d_primitives;
-	//Offset* d_offsets;
 	bool reflection_render_normals;
 
 	// FishEye
@@ -108,15 +104,12 @@ struct RayPayload
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
 	Vertex reflection_vertex;
-	//float3 reflect_prim_normals;
 };
 
 struct GaussianIndice
 {
 	size_t index;
 };
-
-
 
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;

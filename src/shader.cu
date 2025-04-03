@@ -298,10 +298,12 @@ extern "C" __global__ void __raygen__raygeneration()
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
-		/*else {
-			result = (prd.reflection_vertex.normal + 1.0f) / 2.0f;
+
+		if (params.reflection_render_normals) {
+			result = (prd.reflection_vertex.normal + 1) / 2;
 			break;
-		}*/
+		}
+
 		const Vertex hit_point = prd.reflection_vertex;
 		if (length(hit_point.position - ray_origin) < 1e-6){
 			break;
@@ -368,17 +370,6 @@ extern "C" __global__ void __closesthit__closesthit()
 	Vertex v0 = mesh.vertices[face.indices.x];
 	Vertex v1 = mesh.vertices[face.indices.y];
 	Vertex v2 = mesh.vertices[face.indices.z];
-
-	//prd.reflect_prim_normals = v0.normal;
-
-	//unsigned int mesh_index = optixGetInstanceId();
-	//
-	//Offset offset = params.d_offsets[mesh_index];
-	//uint3 hit_primitive = params.d_primitives[offset.primitive_offset + primitive_index];
-	//
-	//Vertex v0 = params.d_vertices[offset.vertex_offset + hit_primitive.x];
-	//Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
-	//Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
 
 	float3 p0 = v0.position;
 	float3 p1 = v1.position;

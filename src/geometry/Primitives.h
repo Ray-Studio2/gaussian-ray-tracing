@@ -38,8 +38,21 @@ public:
 	Primitive createSphere(float3 position);
 	Primitive createLoadMesh(std::string filename, float3 position);
 
-	size_t getMeshCount() const { return numberOfMesh; }
 	std::vector<Primitive>& getPrimitives() { return m_primitives; }
+	void clearPrimitives()
+	{ 
+		m_primitives.clear(); 
+
+		numberOfMesh   = 0;
+		numberOfPlane  = 0;
+		numberOfSphere = 0;
+		numberOfLoaded = 0;
+	}
+
+	size_t& getMeshCount() { return numberOfMesh; }
+	size_t& getPlaneCount() { return numberOfPlane; }
+	size_t& getSphereCount() { return numberOfSphere; }
+	size_t& getLoadedCount() { return numberOfLoaded; }
 
 private:
 	glm::mat4 getInitialTransform(float3 position);

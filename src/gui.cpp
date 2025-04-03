@@ -366,6 +366,10 @@ void GUI::renderPanel()
             m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
         }
 
+        if (ImGui::Button("Remove primitives")) {
+			m_tracer->removePrimitive();
+		}
+
         ImGuizmo::BeginFrame();
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
@@ -376,7 +380,7 @@ void GUI::renderPanel()
 
         for (Primitive& p : m_tracer->getPrimitives()) {
             std::string lbl = p.type + " " + std::to_string(p.index);
-            int node_id = p.index;
+            int node_id = p.instanceIndex;
 
             if (close_node == node_id) {
                 ImGui::SetNextItemOpen(false, ImGuiCond_Always);
@@ -423,7 +427,7 @@ void GUI::renderPanel()
 
             if (manipulated) {
                 for (Primitive& p : m_tracer->getPrimitives()) {
-                    if (p.index == manipulated_index) {
+                    if (p.instanceIndex == manipulated_index) {
                         p.transform = manipulated_model;
                         m_tracer->updateInstanceTransforms(p);
                         break;
@@ -431,82 +435,6 @@ void GUI::renderPanel()
                 }
             }
         }
-             
-    //    for (Primitive& p : m_tracer->getPrimitives())
-    //    {
-    //        std::string lbl = p.type + " " + std::to_string(p.index);
-    //        int node_id = p.index;
-
-    //        if (close_node == node_id) {
-    //            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
-    //            close_node = -1;
-    //        }
-
-    //        ImGui::PushID(node_id);
-    //        if (ImGui::TreeNode(lbl.c_str())) {
-    //            if (current_node == node_id) {
-    //                if (ImGui::RadioButton("Translation", m_currentGizmoOperation == ImGuizmo::TRANSLATE))
-    //                    m_currentGizmoOperation = ImGuizmo::TRANSLATE;
-
-    //                if (ImGui::RadioButton("Rotation", m_currentGizmoOperation == ImGuizmo::ROTATE))
-    //                    m_currentGizmoOperation = ImGuizmo::ROTATE;
-
-    //                if (ImGui::RadioButton("Scale", m_currentGizmoOperation == ImGuizmo::SCALE))
-    //                    m_currentGizmoOperation = ImGuizmo::SCALE;
-
-    //                manipulated_model = p.transform;
-    //                manipulated_index = node_id;
-
-    //                // Remove primitive
-    //                if (ImGui::Button("Remove")) {
-    //                    remove_primitive_type = p.type;
-    //                    remove_primitive_index = p.index;
-    //                    remove_instance_index = p.instanceIndex;
-    //                    remove_primitive = true;
-
-    //                    if (current_node == node_id)
-    //                        current_node = -1;
-    //                }
-    //            }
-    //            else {
-    //                close_node = current_node;
-    //                current_node = node_id;
-    //            }
-    //            ImGui::TreePop();
-    //        }
-    //        ImGui::PopID();
-    //    }
-
-    //    if (manipulated_index >= 0) {
-    //        glm::mat4 view = m_camera->getViewMatrix();
-    //        glm::mat4 proj = m_camera->getProjectionMatrix();
-
-    //        bool manipulated = ImGuizmo::Manipulate(
-    //            glm::value_ptr(view),
-    //            glm::value_ptr(proj),
-    //            m_currentGizmoOperation,
-    //            m_currentGizmoMode,
-    //            glm::value_ptr(manipulated_model),
-    //            nullptr,
-    //            nullptr
-    //        );
-
-    //        if (manipulated) {
-    //            for (Primitive& p : m_tracer->getPrimitives()) {
-    //                if (p.index == manipulated_index) {
-    //                    p.transform = manipulated_model;
-    //                    m_tracer->updateInstanceTransforms(p);
-    //                    break;
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    if (remove_primitive)
-    //    {
-    //        m_tracer->removePrimitive(remove_primitive_type, remove_primitive_index, remove_instance_index);
-    //        remove_primitive = false;
-    //    }
     }
 
 	ImGui::End();

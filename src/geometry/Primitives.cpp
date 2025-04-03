@@ -49,11 +49,11 @@ Primitive Primitives::createPlane(float3 position)
 		}
 	}
 
-	p.index = numberOfPlane++;
-	p.type = "Plane";
+	p.index         = numberOfPlane++;
+	p.type          = "Plane";
     p.instanceIndex = numberOfMesh++;
-	p.vertex_count = p.vertices.size();
-	p.transform = getInitialTransform(position);
+	p.vertex_count  = p.vertices.size();
+	p.transform     = getInitialTransform(position);
 
 	m_primitives.push_back(p);
 
@@ -128,11 +128,11 @@ Primitive Primitives::createSphere(float3 position)
         }
     }
 
-    p.index = numberOfSphere++;
-	p.type = "Sphere";
+    p.index         = numberOfSphere++;
+	p.type          = "Sphere";
     p.instanceIndex = numberOfMesh++;
-    p.vertex_count = p.vertices.size();
-    p.transform = getInitialTransform(position);
+    p.vertex_count  = p.vertices.size();
+    p.transform     = getInitialTransform(position);
 
     m_primitives.push_back(p);
 
@@ -190,11 +190,11 @@ Primitive Primitives::createLoadMesh(std::string filename, float3 position)
         }
     }
 
-    p.index = numberOfLoaded++;
-    p.type = "LoadedMesh";
+    p.index         = numberOfLoaded++;
+    p.type          = "LoadedMesh";
     p.instanceIndex = numberOfMesh++;
-    p.vertex_count = p.vertices.size();
-    p.transform = getInitialTransform(position);
+    p.vertex_count  = p.vertices.size();
+    p.transform     = getInitialTransform(position);
 
     m_primitives.push_back(p);
 
