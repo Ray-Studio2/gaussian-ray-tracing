@@ -98,12 +98,6 @@ add_executable(
 	src/CUDAOutputBuffer.cpp
 	src/Utility.h
 	src/geometry/Icosahedron.h
-	src/geometry/Plane.h
-	src/geometry/Sphere.h
-	src/geometry/MeshData.h
-	src/geometry/MeshData.cpp
-	src/geometry/Mesh.h
-	#src/geometry/LoadMesh.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
 	src/geometry/Primitives.cpp
