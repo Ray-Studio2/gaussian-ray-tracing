@@ -363,14 +363,6 @@ extern "C" __global__ void __closesthit__closesthit()
 	Mesh mesh = params.d_meshes[mesh_index];
 	
 	unsigned int primitive_index = optixGetPrimitiveIndex();
-	//I i = mesh.is[primitive_index];
-
-	//V v0 = mesh.vs[i.indices.x];
-	//V v1 = mesh.vs[i.indices.y];
-	//V v2 = mesh.vs[i.indices.z];
-
-	//float3 normal = v0.normals;
-	//prd.reflect_prim_normals = normal;
 
 	Face face = mesh.faces[primitive_index];
 	Vertex v0 = mesh.vertices[face.indices.x];
@@ -378,9 +370,6 @@ extern "C" __global__ void __closesthit__closesthit()
 	Vertex v2 = mesh.vertices[face.indices.z];
 
 	prd.reflect_prim_normals = v0.normal;
-
-	//printf("normal: %f %f %f\n", prd.reflect_prim_normals.x, prd.reflect_prim_normals.y, prd.reflect_prim_normals.z);
-	//printf("vertex: %f %f %f\n", v0.position.x, v0.position.y, v0.position.z);
 
 	//unsigned int mesh_index = optixGetInstanceId();
 	//

@@ -734,7 +734,6 @@ void GaussianTracer::buildReflectionAccelationStructure()
     ));
 
     OptixTraversableHandle ias;
-
     CUDA_CHECK(cudaMalloc((void**)&ias, instance_buffer_sizes.outputSizeInBytes));
 
     CUdeviceptr d_instance_temp_buffer;
@@ -1024,7 +1023,7 @@ void GaussianTracer::createPlane()
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
 
-	p.gas = gas;
+	//p.gas = gas;
 
     reflection_instances.push_back(ias);
 
@@ -1052,7 +1051,7 @@ void GaussianTracer::createSphere()
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
     
-    p.gas = gas;
+    //p.gas = gas;
 
     reflection_instances.push_back(ias);
 
@@ -1080,7 +1079,7 @@ void GaussianTracer::createLoadMesh(std::string filename)
     OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
     OptixInstance          ias = createIAS(gas, p.transform);
 
-    p.gas = gas;
+    //p.gas = gas;
 
     reflection_instances.push_back(ias);
 
@@ -1166,13 +1165,11 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
-    instance.traversableHandle = p.gas;
+    instance.traversableHandle = createGAS(p.vertices, p.indices);
 
 	reflection_instances[p.instanceIndex] = instance;
 
 	buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
-
-    //sendGeometryAttributesToDevice(transform);
     sendGeometryAttributesToDevice(p);
 }

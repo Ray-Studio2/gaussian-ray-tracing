@@ -60,7 +60,7 @@ Primitive Primitives::createPlane(float3 position)
 	return p;
 }
 
-Primitive  Primitives::createSphere(float3 position)
+Primitive Primitives::createSphere(float3 position)
 {
     Primitive p;
 
