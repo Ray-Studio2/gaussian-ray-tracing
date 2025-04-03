@@ -66,4 +66,5 @@ This project was developed with reference to the following repositories and reso
 - Remove Individual Meshes   
 - Add Refraction Feature   
 - Code Refactoring   
-- Miscellaneous Bug Fixes   
+- Miscellaneous Bug Fixes
+- Fix the OBJ loader (match the current scene’s scale, resolve normal issues)
