@@ -1031,6 +1031,8 @@ void GaussianTracer::createPlane()
     updateParamsTraversableHandle();   
 
 	sendGeometryAttributesToDevice(p);
+    
+    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::createSphere()
@@ -1059,6 +1061,8 @@ void GaussianTracer::createSphere()
     updateParamsTraversableHandle();
 
     sendGeometryAttributesToDevice(p);
+
+	params.has_reflection_objects = true;
 }
 
 void GaussianTracer::createLoadMesh(std::string filename)
@@ -1087,6 +1091,8 @@ void GaussianTracer::createLoadMesh(std::string filename)
     updateParamsTraversableHandle();
 
     sendGeometryAttributesToDevice(p);
+
+    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
@@ -1095,9 +1101,14 @@ void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
     Vertex* _vertices = new Vertex[vertex_count];
     for (int i = 0; i < vertex_count; i++) {
         Vertex v;
-		// TODO: if p.transform is updated, the normals should be transformed.
-        v.position = p.vertices[i];
-        v.normal = p.normals[i];
+        glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
+        glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
+
+        glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
+        glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
+
+        v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
+        v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
 
         _vertices[i] = v;
     }
@@ -1165,11 +1176,77 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
+	// TODO: Better way to get the gas handle
     instance.traversableHandle = createGAS(p.vertices, p.indices);
 
 	reflection_instances[p.instanceIndex] = instance;
 
 	buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
-    sendGeometryAttributesToDevice(p);
+    updateGeometryAttributesToDevice(p);
+}
+
+void GaussianTracer::updateGeometryAttributesToDevice(Primitive& p)
+{
+    size_t vertex_count = p.vertex_count;
+    Vertex* _vertices = new Vertex[vertex_count];
+    for (int i = 0; i < vertex_count; i++) {
+        Vertex v;
+		glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
+		glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
+
+		glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
+		glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
+
+		v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
+		v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
+
+        _vertices[i] = v;
+    }
+
+    CUdeviceptr _d_vertices;
+    const size_t vertices_size = sizeof(Vertex) * vertex_count;
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(_d_vertices),
+        _vertices,
+        vertices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    CUdeviceptr d_face_indices;
+    const size_t indices_size = (p.indices.size() / 3) * sizeof(uint3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
+    std::vector<uint3> face_indices;
+    for (size_t i = 0; i < p.indices.size(); i += 3) {
+        face_indices.push_back(make_uint3(
+            p.indices[i],
+            p.indices[i + 1],
+            p.indices[i + 2]
+        ));
+    }
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_face_indices),
+        face_indices.data(),
+        indices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    Mesh mesh;
+    mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
+    mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+
+	meshes[p.index] = mesh;
+
+    CUdeviceptr d_meshes;
+    const size_t mesh_size = sizeof(Mesh) * meshes.size();
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_meshes), mesh_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_meshes),
+        meshes.data(),
+        mesh_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
 }

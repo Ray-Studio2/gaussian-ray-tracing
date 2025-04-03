@@ -94,6 +94,7 @@ private:
 	//void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
 
 	void sendGeometryAttributesToDevice(Primitive p);
+	void updateGeometryAttributesToDevice(Primitive& p);
 
 	void filterGaussians();
 

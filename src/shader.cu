@@ -159,7 +159,7 @@ static __forceinline__ __device__ float3 trace(
 
 	unsigned int step = 0;
 
-	if (true)
+	if (params.has_reflection_objects)
 	{
 		uint32_t u0, u1;
 		packPointer(&prd, u0, u1);
@@ -298,17 +298,17 @@ extern "C" __global__ void __raygen__raygeneration()
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
-		else {
-			result = (prd.reflect_prim_normals + 1.0f) / 2.0f;
+		/*else {
+			result = (prd.reflection_vertex.normal + 1.0f) / 2.0f;
+			break;
+		}*/
+		const Vertex hit_point = prd.reflection_vertex;
+		if (length(hit_point.position - ray_origin) < 1e-6){
 			break;
 		}
-		//const Vertex hit_point = prd.reflection_vertex;
-		//if (length(hit_point.position - ray_origin) < 1e-6){
-		//	break;
-		//}
-		//ray_origin = hit_point.position;
-		//ray_direction = reflect(ray_direction, hit_point.normal);
-		//recursion_count++;
+		ray_origin = hit_point.position;
+		ray_direction = reflect(ray_direction, hit_point.normal);
+		recursion_count++;
 	}
 
 	const uint3    launch_index = optixGetLaunchIndex();
@@ -369,7 +369,7 @@ extern "C" __global__ void __closesthit__closesthit()
 	Vertex v1 = mesh.vertices[face.indices.y];
 	Vertex v2 = mesh.vertices[face.indices.z];
 
-	prd.reflect_prim_normals = v0.normal;
+	//prd.reflect_prim_normals = v0.normal;
 
 	//unsigned int mesh_index = optixGetInstanceId();
 	//
@@ -380,23 +380,23 @@ extern "C" __global__ void __closesthit__closesthit()
 	//Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
 	//Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
 
-	//float3 p0 = v0.position;
-	//float3 p1 = v1.position;
-	//float3 p2 = v2.position;
+	float3 p0 = v0.position;
+	float3 p1 = v1.position;
+	float3 p2 = v2.position;
 
-	//float3 n0 = v0.normal;
-	//float3 n1 = v1.normal;
-	//float3 n2 = v2.normal;
+	float3 n0 = v0.normal;
+	float3 n1 = v1.normal;
+	float3 n2 = v2.normal;
 
-	//float2 barycentrics = optixGetTriangleBarycentrics();
+	float2 barycentrics = optixGetTriangleBarycentrics();
 
-	//float w0 = 1.0f - barycentrics.x - barycentrics.y;
-	//float w1 = barycentrics.x;
-	//float w2 = barycentrics.y;
+	float w0 = 1.0f - barycentrics.x - barycentrics.y;
+	float w1 = barycentrics.x;
+	float w2 = barycentrics.y;
 
-	//float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
-	//float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
+	float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
+	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 
-	//prd.reflection_vertex.position = hit_position;
-	//prd.reflection_vertex.normal = hit_normal;
+	prd.reflection_vertex.position = hit_position;
+	prd.reflection_vertex.normal = hit_normal;
 }

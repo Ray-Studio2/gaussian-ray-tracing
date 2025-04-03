@@ -107,8 +107,8 @@ struct RayPayload
 
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
-	//Vertex reflection_vertex;
-	float3 reflect_prim_normals;
+	Vertex reflection_vertex;
+	//float3 reflect_prim_normals;
 };
 
 struct GaussianIndice
