@@ -1,5 +1,5 @@
-# 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes (Unofficial Implementation)
-This repository provides an unofficial implementation inspired by the paper **"3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"**. It may not fully reproduce all the results or optimizations presented in the original paper, and it currently contains some bugs that will be continuously addressed in future updates. Additionally, new features will be added over time. Note that training code has not been implemented yet; only a partial application described in the paper is available at this time.
+# 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
+This repository is an **unofficial implementation** of the paper **"3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"**. It may not fully reproduce all the results or optimizations presented in the original paper, and it currently contains some bugs that will be continuously addressed in future updates. Additionally, new features will be added over time. Note that training code has not been implemented yet; only a partial application described in the paper is available at this time.
 
 ## 🛩️ Features
 - **Supported File Format**: Only trained PLY files are supported.   
@@ -60,3 +60,10 @@ This project was developed with reference to the following repositories and reso
 - [WebGPU Gaussian Tracer](https://github.com/meta-plane/WebGPU-GaussianTracer)
 - [NVIDIA OptiX Apps](https://github.com/NVIDIA/OptiX_Apps)
 - OptiX SDK examples
+
+## 📒ToDo list
+- Gaussian Rendering Issue Improvement   
+- Remove Individual Meshes   
+- Add Refraction Feature   
+- Code Refactoring   
+- Miscellaneous Bug Fixes   
