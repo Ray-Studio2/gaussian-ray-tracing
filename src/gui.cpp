@@ -165,13 +165,13 @@ void GUI::keyboardEvent()
         camera_changed = true;
     }
 
- //   // Add primitives
-	//if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_P)) {
-	//	m_tracer->createGeometry<Plane>(geometries[PLANE]);
-	//}
- //   else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
-	//	m_tracer->createGeometry<Sphere>(geometries[SPHERE]);
- //   }
+    // Add primitives
+    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_P)) {
+        m_tracer->createPlane();
+    }
+    else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
+        m_tracer->createSphere();
+    }
 
     // Render reflection primitive normals
 	if (ImGui::IsKeyPressed(ImGuiKey_N)) {
