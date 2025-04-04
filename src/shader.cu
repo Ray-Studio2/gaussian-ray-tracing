@@ -180,7 +180,6 @@ static __forceinline__ __device__ float3 trace(
 		);
 	}
 
-
 	while (params.T_min < T && t_curr < params.t_max)
 	{
 		for (int i = 0; i < params.k; i++)
@@ -299,14 +298,12 @@ extern "C" __global__ void __raygen__raygeneration()
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
+
 		if (params.reflection_render_normals) {
 			result = (prd.reflection_vertex.normal + 1) / 2;
 			break;
 		}
-		/*else {
-			result = (prd.reflection_vertex.normal+1)/2;
-			break;
-		}*/
+
 		const Vertex hit_point = prd.reflection_vertex;
 		if (length(hit_point.position - ray_origin) < 1e-6){
 			break;
@@ -364,15 +361,15 @@ extern "C" __global__ void __closesthit__closesthit()
 	prd.hit_reflection_primitive = true;
 	prd.t_hit_reflection = optixGetRayTmax();
 
-	unsigned int primitive_index = optixGetPrimitiveIndex();
 	unsigned int mesh_index = optixGetInstanceId();
+	Mesh mesh = params.d_meshes[mesh_index];
 	
-	Offset offset = params.d_offsets[mesh_index];
-	uint3 hit_primitive = params.d_primitives[offset.primitive_offset + primitive_index];
-	
-	Vertex v0 = params.d_vertices[offset.vertex_offset + hit_primitive.x];
-	Vertex v1 = params.d_vertices[offset.vertex_offset + hit_primitive.y];
-	Vertex v2 = params.d_vertices[offset.vertex_offset + hit_primitive.z];
+	unsigned int primitive_index = optixGetPrimitiveIndex();
+
+	Face face = mesh.faces[primitive_index];
+	Vertex v0 = mesh.vertices[face.indices.x];
+	Vertex v1 = mesh.vertices[face.indices.y];
+	Vertex v2 = mesh.vertices[face.indices.z];
 
 	float3 p0 = v0.position;
 	float3 p1 = v1.position;

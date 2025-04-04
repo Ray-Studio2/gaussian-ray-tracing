@@ -166,11 +166,11 @@ void GUI::keyboardEvent()
     }
 
     // Add primitives
-	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_P)) {
-		m_tracer->createGeometry<Plane>(geometries[PLANE]);
-	}
+    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_P)) {
+        m_tracer->createPlane();
+    }
     else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
-		m_tracer->createGeometry<Sphere>(geometries[SPHERE]);
+        m_tracer->createSphere();
     }
 
     // Render reflection primitive normals
@@ -327,10 +327,10 @@ void GUI::renderPanel()
 		if (ImGui::Button("Add Primitive"))
 		{
             if (selected_geometry == PLANE) {
-                m_tracer->createGeometry<Plane>(geometries[selected_geometry]);
+                m_tracer->createPlane();
             }
             else if (selected_geometry == SPHERE) {
-                m_tracer->createGeometry<Sphere>(geometries[selected_geometry]);
+                m_tracer->createSphere();
             }
             else if (selected_geometry == CUSTOM) {
 				open_file_dialog = true;
@@ -343,11 +343,11 @@ void GUI::renderPanel()
             ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".obj", config);
         }
 
-        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(300, 200))) {
             if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                m_tracer->createGeometry<LoadMesh>(geometries[selected_geometry], filePathName);
+				m_tracer->createLoadMesh(filePathName);
             }
             ImGuiFileDialog::Instance()->Close();
 
@@ -366,6 +366,10 @@ void GUI::renderPanel()
             m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
         }
 
+        if (ImGui::Button("Remove primitives")) {
+			m_tracer->removePrimitive();
+		}
+
         ImGuizmo::BeginFrame();
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
@@ -374,10 +378,9 @@ void GUI::renderPanel()
         glm::mat4 manipulated_model;
         int manipulated_index = -1;
 
-        for (Primitive& p : m_tracer->getPrimitives())
-        {
+        for (Primitive& p : m_tracer->getPrimitives()) {
             std::string lbl = p.type + " " + std::to_string(p.index);
-            int node_id = p.index;
+            int node_id = p.instanceIndex;
 
             if (close_node == node_id) {
                 ImGui::SetNextItemOpen(false, ImGuiCond_Always);
@@ -398,17 +401,6 @@ void GUI::renderPanel()
 
                     manipulated_model = p.transform;
                     manipulated_index = node_id;
-
-                    // Remove primitive
-                    if (ImGui::Button("Remove")) {
-                        remove_primitive_type = p.type;
-                        remove_primitive_index = p.index;
-                        remove_instance_index = p.instanceIndex;
-                        remove_primitive = true;
-
-                        if (current_node == node_id)
-                            current_node = -1;
-                    }
                 }
                 else {
                     close_node = current_node;
@@ -435,19 +427,13 @@ void GUI::renderPanel()
 
             if (manipulated) {
                 for (Primitive& p : m_tracer->getPrimitives()) {
-                    if (p.index == manipulated_index) {
+                    if (p.instanceIndex == manipulated_index) {
                         p.transform = manipulated_model;
                         m_tracer->updateInstanceTransforms(p);
                         break;
                     }
                 }
             }
-        }
-
-        if (remove_primitive)
-        {
-            m_tracer->removePrimitive(remove_primitive_type, remove_primitive_index, remove_instance_index);
-            remove_primitive = false;
         }
     }
 

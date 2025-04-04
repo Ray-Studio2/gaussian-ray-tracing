@@ -12,22 +12,10 @@
 
 #include "Camera.h"
 #include "geometry/Icosahedron.h"
-#include "geometry/Plane.h"
-#include "geometry/Sphere.h"
-#include "geometry/LoadMesh.h"
 #include "Parameters.h"
 #include "GaussianData.h"
 #include "CUDAOutputBuffer.h"
-#include "geometry/Mesh.h"
-
-struct Primitive
-{
-	std::string			   type;
-	size_t				   index;
-	glm::mat4			   transform;
-	size_t				   instanceIndex;
-	OptixTraversableHandle gas;
-};
+#include "geometry/Primitives.h"
 
 enum ReflectionPrimitiveType
 {
@@ -51,20 +39,21 @@ public:
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
 
-	template <typename T>
-	void createGeometry(std::string geometry_name);
-	template <typename T>
-	void createGeometry(std::string geometry_name, std::string filename);
-
 	void updateInstanceTransforms(Primitive& p);
 
-	std::vector<Primitive>& getPrimitives() { return primitives; }
-	void removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex);
+	std::vector<Primitive>& getPrimitives() { return primitives->getPrimitives(); }
+	void removePrimitive();
 
 	void setReflectionMeshRenderNormal(bool val);
 
 	Params	 params;
-	CUstream stream;	
+	CUstream stream;
+
+	// Primitives
+	Primitives* primitives = new Primitives();
+	void createPlane();
+	void createSphere();
+	void createLoadMesh(std::string filename);
 
 private:
 	void createContext();
@@ -82,8 +71,8 @@ private:
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
 	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
 
-	void sendGeometryAttributesToDevice(glm::mat4 transform);
-	void addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name);
+	void sendGeometryAttributesToDevice(Primitive p);
+	void updateGeometryAttributesToDevice(Primitive& p);
 
 	void filterGaussians();
 
@@ -92,9 +81,6 @@ private:
 	std::vector<GaussianIndice> m_gsIndice;
 	size_t						vertex_count;
 	float						alpha_min;
-
-	// Reflection data
-	MeshData					m_meshData;
 
 	// Optix state
 	OptixDeviceContext		   m_context;
@@ -122,73 +108,8 @@ private:
 	CUdeviceptr               d_vertices;
 	CUdeviceptr               d_indices;
 
-	// Reflection Primitives
-	std::vector<Primitive> primitives;
-	unsigned int		   numberOfPlanes  = 0;
-	unsigned int		   numberOfSpheres = 0;
+	// Reflection meshes
+	std::vector<Mesh> meshes;
+
+	float3 current_lookat;
 };
-
-
-template <typename T>
-void GaussianTracer::createGeometry(std::string geometry_name)
-{
-	float3 gaussianCenter = getGaussianCenter();
-	float3 cameraPosition = params.eye;
-	float cameraWeight = 0.75f;
-	float gaussianWeight = 1.0f - cameraWeight;
-
-	float3 midPoint = {
-		gaussianCenter.x * gaussianWeight + cameraPosition.x * cameraWeight,
-		gaussianCenter.y * gaussianWeight + cameraPosition.y * cameraWeight,
-		gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
-	};
-
-	T geometry = T(midPoint);
-	m_meshData.addMesh(geometry);
-
-	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());
-	OptixInstance          ias = createIAS(gas, geometry.getTransform());
-
-	reflection_instances.push_back(ias);
-
-	buildReflectionAccelationStructure();
-	updateParamsTraversableHandle();
-
-	sendGeometryAttributesToDevice(geometry.getTransform());
-
-	addPrimitives(gas, geometry, geometry_name);
-
-	params.has_reflection_objects = true;
-}
-
-template <typename T>
-void GaussianTracer::createGeometry(std::string geometry_name, std::string filename)
-{
-	float3 gaussianCenter = getGaussianCenter();
-	float3 cameraPosition = params.eye;
-	float cameraWeight = 0.75f;
-	float gaussianWeight = 1.0f - cameraWeight;
-
-	float3 midPoint = {
-		gaussianCenter.x * gaussianWeight + cameraPosition.x * cameraWeight,
-		gaussianCenter.y * gaussianWeight + cameraPosition.y * cameraWeight,
-		gaussianCenter.z * gaussianWeight + cameraPosition.z * cameraWeight
-	};
-
-	T geometry = T(midPoint, filename);
-	m_meshData.addMesh(geometry);
-
-	OptixTraversableHandle gas = createGAS(geometry.getVertices(), geometry.getIndices());
-	OptixInstance          ias = createIAS(gas, geometry.getTransform());
-
-	reflection_instances.push_back(ias);
-
-	buildReflectionAccelationStructure();
-	updateParamsTraversableHandle();
-
-	sendGeometryAttributesToDevice(geometry.getTransform());
-
-	addPrimitives(gas, geometry, geometry_name);
-
-	params.has_reflection_objects = true;
-}

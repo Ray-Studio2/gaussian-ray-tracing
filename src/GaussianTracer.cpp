@@ -590,22 +590,14 @@ void GaussianTracer::createSBT()
         cudaMemcpyHostToDevice
     ));
 
-    std::vector<HitRecord> hit_records;
-    for (int i = 0; i < m_gsIndice.size(); i++)
-    {
-        HitRecord rec;
-        OPTIX_CHECK(optixSbtRecordPackHeader(hit_prog_group, &rec));
-
-        rec.data.index = m_gsIndice[i].index;
-        hit_records.push_back(rec);
-    }
-
-    CUdeviceptr d_hit_records;
-    const size_t hit_record_size = sizeof(HitRecord) * hit_records.size();
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_hit_records), hit_record_size));
+    CUdeviceptr d_hit_record;
+    const size_t hit_record_size = sizeof(HitRecord);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_hit_record), hit_record_size));
+    HitRecord hit_sbt = {};
+    OPTIX_CHECK(optixSbtRecordPackHeader(hit_prog_group, &hit_sbt));
     CUDA_CHECK(cudaMemcpy(
-        reinterpret_cast<void*>(d_hit_records),
-        hit_records.data(),
+        reinterpret_cast<void*>(d_hit_record),
+        &hit_sbt,
         hit_record_size,
         cudaMemcpyHostToDevice
     ));
@@ -614,9 +606,9 @@ void GaussianTracer::createSBT()
     sbt.missRecordBase              = d_miss_record;
     sbt.missRecordStrideInBytes     = static_cast<uint32_t>(miss_record_size);
     sbt.missRecordCount             = RAY_TYPE_COUNT;
-    sbt.hitgroupRecordBase          = d_hit_records;
-    sbt.hitgroupRecordStrideInBytes = sizeof(HitRecord);
-    sbt.hitgroupRecordCount         = static_cast<uint32_t>(hit_records.size());
+	sbt.hitgroupRecordBase          = d_hit_record;
+	sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hit_record_size);
+	sbt.hitgroupRecordCount         = 1;
 }
 
 void GaussianTracer::initParams()
@@ -628,7 +620,7 @@ void GaussianTracer::initParams()
     params.t_max                     = 1e5f;
     params.T_min                     = 0.03f;
     params.alpha_min                 = alpha_min;
-    params.sh_degree_max             = 2;
+    params.sh_degree_max             = 0;
 	params.reflection_handle         = reflection_ias;
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;
@@ -714,6 +706,8 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 	camera.setAspectRatio(static_cast<float>(params.width) / static_cast<float>(params.height));
 	params.eye = camera.eye();
 	camera.UVWFrame(params.U, params.V, params.W);
+
+    current_lookat = camera.lookat();
 }
 
 void GaussianTracer::buildReflectionAccelationStructure()
@@ -742,7 +736,6 @@ void GaussianTracer::buildReflectionAccelationStructure()
     ));
 
     OptixTraversableHandle ias;
-
     CUDA_CHECK(cudaMalloc((void**)&ias, instance_buffer_sizes.outputSizeInBytes));
 
     CUdeviceptr d_instance_temp_buffer;
@@ -859,7 +852,7 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 
 	OptixInstance instance = {};
 	memcpy(instance.transform, instance_transform, sizeof(float) * 12);
-    instance.instanceId = m_meshData.getMeshCount()-1;
+	instance.instanceId        = primitives->getMeshCount() - 1;
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
@@ -868,118 +861,186 @@ OptixInstance GaussianTracer::createIAS(OptixTraversableHandle const& gas, glm::
 	return instance;
 }
 
-void GaussianTracer::sendGeometryAttributesToDevice(glm::mat4 transform)
+void GaussianTracer::removePrimitive()
 {
-    {
-        Vertex* vertices = new Vertex[m_meshData.getVertexCount()];
-        std::vector<Vertex> transformed_vertices = m_meshData.transformed_vertices(transform);
-        for (int i = 0; i < m_meshData.getVertexCount(); i++)
-        {
-            vertices[i] = transformed_vertices[i];
-        }
+    reflection_instances.clear();
+    for (auto& mesh : meshes) {
+        if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
+        if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
+    }
+    meshes.clear();
 
-        CUdeviceptr d_vertices;
-        const size_t vertices_size = sizeof(Vertex) * m_meshData.getVertexCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_vertices), vertices_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_vertices),
-            vertices,
-            vertices_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_vertices = reinterpret_cast<Vertex*>(d_vertices);
+    if (params.d_meshes) {
+        CUDA_CHECK(cudaFree(params.d_meshes));
+        params.d_meshes = nullptr;
     }
 
-    {
-        uint3* primitives = new uint3[m_meshData.getPrimitiveCount()];
-        for (int i = 0; i < m_meshData.getPrimitiveCount(); i++)
-        {
-            primitives[i] = m_meshData.m_primitives[i];
-        }
-        CUdeviceptr d_mesh_primitives;
-        const size_t primitives_size = sizeof(uint3) * m_meshData.getPrimitiveCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_mesh_primitives), primitives_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_mesh_primitives),
-            primitives,
-            primitives_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_primitives = reinterpret_cast<uint3*>(d_mesh_primitives);
-    }
-
-    {
-        Offset* offsets = new Offset[m_meshData.getMeshCount()];
-        for (int i = 0; i < m_meshData.getMeshCount(); i++)
-        {
-            offsets[i] = m_meshData.m_offsets[i];
-        }
-        CUdeviceptr d_offsets;
-        const size_t offsets_size = sizeof(Offset) * m_meshData.getMeshCount();
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_offsets), offsets_size));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_offsets),
-            offsets,
-            offsets_size,
-            cudaMemcpyHostToDevice
-        ));
-        params.d_offsets = reinterpret_cast<Offset*>(d_offsets);
-    }
-}
-
-void GaussianTracer::addPrimitives(OptixTraversableHandle gas, Mesh& geometry, std::string geometry_name)
-{
-    Primitive p;
-    p.type = geometry_name;
-    p.index = numberOfSpheres++;
-	p.transform = geometry.getTransform();
-    p.instanceIndex = reflection_instances.size() - 1;
-    p.gas = gas;
-
-    primitives.push_back(p);
-}
-
-void GaussianTracer::removePrimitive(std::string primitiveType, size_t primitiveIndex, size_t instanceIndex)
-{
-    if (primitives.size() == 0)
-        return;
-
-    if (instanceIndex < reflection_instances.size()) {
-        reflection_instances.erase(reflection_instances.begin() + instanceIndex);
-    }
-
-    primitives.erase(
-        std::remove_if(primitives.begin(), primitives.end(),
-            [primitiveType, primitiveIndex](const Primitive& p) {
-                return (p.type == primitiveType) && (p.index == primitiveIndex);
-            }),
-        primitives.end()
-    );
-
-    for (auto& p : primitives) {
-        if (p.index > primitiveIndex) {
-            p.index -= 1;
-            if (p.instanceIndex > instanceIndex) {
-                p.instanceIndex -= 1;
-            }
-        }
-    }
-
-    if (primitiveType == "Plane")
-        numberOfPlanes--;
-    else if (primitiveType == "Sphere")
-        numberOfSpheres--;
-
-	if (numberOfPlanes + numberOfSpheres == 0)
-		params.has_reflection_objects = false;
-
-    buildReflectionAccelationStructure();
+    primitives->clearPrimitives();
+    reflection_ias = 0;
     updateParamsTraversableHandle();
+    params.has_reflection_objects = false;
 }
 
 void GaussianTracer::updateParamsTraversableHandle()
 {
 	params.reflection_handle = reflection_ias;
+}
+
+void GaussianTracer::setReflectionMeshRenderNormal(bool val)
+{
+    params.reflection_render_normals = val;
+}
+
+void GaussianTracer::createPlane()
+{
+    float3 cameraPosition = params.eye;
+    float cameraWeight = 0.75f;
+    float gaussianWeight = 1.0f - cameraWeight;
+
+    float3 primitive_position = {
+        current_lookat.x * gaussianWeight + cameraPosition.x * cameraWeight,
+        current_lookat.y * gaussianWeight + cameraPosition.y * cameraWeight,
+        current_lookat.z * gaussianWeight + cameraPosition.z * cameraWeight
+    };
+
+    Primitive p = primitives->createPlane(primitive_position);
+
+    OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
+    OptixInstance          ias = createIAS(gas, p.transform);
+
+	//p.gas = gas;
+
+    reflection_instances.push_back(ias);
+
+    buildReflectionAccelationStructure();
+    updateParamsTraversableHandle();   
+
+	sendGeometryAttributesToDevice(p);
+    
+    params.has_reflection_objects = true;
+}
+
+void GaussianTracer::createSphere()
+{
+    float3 cameraPosition = params.eye;
+    float cameraWeight = 0.75f;
+    float gaussianWeight = 1.0f - cameraWeight;
+
+    float3 primitive_position = {
+        current_lookat.x * gaussianWeight + cameraPosition.x * cameraWeight,
+        current_lookat.y * gaussianWeight + cameraPosition.y * cameraWeight,
+        current_lookat.z * gaussianWeight + cameraPosition.z * cameraWeight
+    };
+
+    Primitive p = primitives->createSphere(primitive_position);
+
+    OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
+    OptixInstance          ias = createIAS(gas, p.transform);
+    
+    //p.gas = gas;
+
+    reflection_instances.push_back(ias);
+
+    buildReflectionAccelationStructure();
+    updateParamsTraversableHandle();
+
+    sendGeometryAttributesToDevice(p);
+
+	params.has_reflection_objects = true;
+}
+
+void GaussianTracer::createLoadMesh(std::string filename)
+{
+    float3 cameraPosition = params.eye;
+    float cameraWeight = 0.75f;
+    float gaussianWeight = 1.0f - cameraWeight;
+
+    float3 primitive_position = {
+        current_lookat.x * gaussianWeight + cameraPosition.x * cameraWeight,
+        current_lookat.y * gaussianWeight + cameraPosition.y * cameraWeight,
+        current_lookat.z * gaussianWeight + cameraPosition.z * cameraWeight
+    };
+
+    Primitive p = primitives->createLoadMesh(filename, primitive_position);
+
+    OptixTraversableHandle gas = createGAS(p.vertices, p.indices);
+    OptixInstance          ias = createIAS(gas, p.transform);
+
+    //p.gas = gas;
+
+    reflection_instances.push_back(ias);
+
+    buildReflectionAccelationStructure();
+    updateParamsTraversableHandle();
+
+    sendGeometryAttributesToDevice(p);
+
+    params.has_reflection_objects = true;
+}
+
+void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
+{
+    size_t vertex_count = p.vertex_count;
+    Vertex* _vertices = new Vertex[vertex_count];
+    for (int i = 0; i < vertex_count; i++) {
+        Vertex v;
+        glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
+        glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
+
+        glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
+        glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
+
+        v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
+        v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
+
+        _vertices[i] = v;
+    }
+
+    CUdeviceptr _d_vertices;
+    const size_t vertices_size = sizeof(Vertex) * vertex_count;
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(_d_vertices),
+        _vertices,
+        vertices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    CUdeviceptr d_face_indices;
+    const size_t indices_size = (p.indices.size() / 3) * sizeof(uint3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
+    std::vector<uint3> face_indices;
+    for (size_t i = 0; i < p.indices.size(); i += 3) {
+        face_indices.push_back(make_uint3(
+            p.indices[i],
+            p.indices[i + 1],
+            p.indices[i + 2]
+        ));
+    }
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_face_indices),
+        face_indices.data(),
+        indices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+	Mesh mesh;
+	mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
+	mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+
+	meshes.push_back(mesh);
+
+	CUdeviceptr d_meshes;
+	const size_t mesh_size = sizeof(Mesh) * meshes.size();
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_meshes), mesh_size));
+	CUDA_CHECK(cudaMemcpy(
+		reinterpret_cast<void*>(d_meshes),
+		meshes.data(),
+        mesh_size,
+		cudaMemcpyHostToDevice
+	));
+
+	params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
 }
 
 void GaussianTracer::updateInstanceTransforms(Primitive& p)
@@ -994,21 +1055,81 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
 
     OptixInstance instance = {};
     memcpy(instance.transform, instance_transform, sizeof(float) * 12);
-	instance.instanceId        = 0;
+	instance.instanceId        = p.instanceIndex;
     instance.visibilityMask    = 255;
     instance.sbtOffset         = 0;
     instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
-    instance.traversableHandle = p.gas;
+	// TODO: Better way to get the gas handle
+    instance.traversableHandle = createGAS(p.vertices, p.indices);
 
 	reflection_instances[p.instanceIndex] = instance;
 
 	buildReflectionAccelationStructure();
     updateParamsTraversableHandle();
-
-    sendGeometryAttributesToDevice(transform);
+    updateGeometryAttributesToDevice(p);
 }
 
-void GaussianTracer::setReflectionMeshRenderNormal(bool val)
+void GaussianTracer::updateGeometryAttributesToDevice(Primitive& p)
 {
-    params.reflection_render_normals = val;
+    size_t vertex_count = p.vertex_count;
+    Vertex* _vertices = new Vertex[vertex_count];
+    for (int i = 0; i < vertex_count; i++) {
+        Vertex v;
+		glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
+		glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
+
+		glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
+		glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
+
+		v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
+		v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
+
+        _vertices[i] = v;
+    }
+
+    CUdeviceptr _d_vertices;
+    const size_t vertices_size = sizeof(Vertex) * vertex_count;
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(_d_vertices),
+        _vertices,
+        vertices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    CUdeviceptr d_face_indices;
+    const size_t indices_size = (p.indices.size() / 3) * sizeof(uint3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
+    std::vector<uint3> face_indices;
+    for (size_t i = 0; i < p.indices.size(); i += 3) {
+        face_indices.push_back(make_uint3(
+            p.indices[i],
+            p.indices[i + 1],
+            p.indices[i + 2]
+        ));
+    }
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_face_indices),
+        face_indices.data(),
+        indices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    Mesh mesh;
+    mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
+    mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+
+	meshes[p.instanceIndex] = mesh;
+
+    CUdeviceptr d_meshes;
+    const size_t mesh_size = sizeof(Mesh) * meshes.size();
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_meshes), mesh_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(d_meshes),
+        meshes.data(),
+        mesh_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    params.d_meshes = reinterpret_cast<Mesh*>(d_meshes);
 }
