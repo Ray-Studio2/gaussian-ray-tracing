@@ -32,18 +32,20 @@ $ cd build
 $ cmake -DOptiX_INSTALL_DIR="/path/to/optix" ..
 $ cmake --build .
 ```
-
-## 🦤 Examples
-### 🪞Reflection
-***4090에서 녹화 후 올릴 예정!***
-### 🎏 Fisheye
-***4090에서 녹화 후 올릴 예정!***
-
 ## 🎠 Usage
 ```sh
 $ cd build
 $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height height_value
 ```
+
+## 🦤 Examples
+### 🪞Reflection
+***4090에서 녹화 후 올릴 예정!***
+### 🎏 Fisheye
+<p align="center">
+  <img width="60%" src="assets/fisheye.gif">
+</p>
+### Gizmo
 
 ### Keyboard shortcuts
 | Key             | Meaning       |
