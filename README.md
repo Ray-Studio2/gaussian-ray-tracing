@@ -39,13 +39,17 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
 ```
 
 ## 🦤 Examples
+
 ### 🪞Reflection
 ***4090에서 녹화 후 올릴 예정!***
+
 ### 🎏 Fisheye
 <p align="center">
   <img width="60%" src="assets/fisheye.gif">
 </p>
-### Gizmo
+
+### 🏗️ Gizmo
+
 
 ### Keyboard shortcuts
 | Key             | Meaning       |
