@@ -50,8 +50,11 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
   <img width="60%" src="assets/fisheye.gif">
 </p>
 
-### 🏗️ Gizmo
-
+### 🏗️ Other features
+- Gizmo
+<p align="center">
+  <img width="60%" src="assets/gizmo.gif">
+</p>
 
 ### Keyboard shortcuts
 | Key             | Meaning       |
