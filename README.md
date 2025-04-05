@@ -6,6 +6,7 @@ This repository is an **unofficial implementation** of the paper **"3D Gaussian 
 - **Supported Modes**: Currently reflection and fisheye modes are available.   
 - **Gizmo Support**: Includes a gizmo for reflection primitive transform.   
 - **OBJ File Loading**: Supports loading OBJ files through a file dialog.
+  - *Before uploading an OBJ file, make sure the normals are included correctly and the scene scale fits properly for Gaussian particles. Then proceed with the upload.*
 
 ## 🤖 Building gaussian-ray-tracing (Windows)
 ### Requirements
@@ -73,7 +74,8 @@ This project was developed with reference to the following repositories and reso
 - OptiX SDK examples
 
 ## 📒ToDo list
-- Gaussian Rendering Issue Improvement   
+- Gaussian Particles Rendering Issue Improvement
+  - Currently, our Gaussian particle rendering exhibits artifacts and does not match the official code’s results. We will address these bugs and improve the code in an upcoming update.   
 - Add support Gaussian particles SH
 - Remove Individual Meshes   
 - Add Refraction Feature   
