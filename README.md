@@ -41,7 +41,9 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
 ## 🦤 Examples
 
 ### 🪞Reflection
-***4090에서 녹화 후 올릴 예정!***
+<p align="center">
+  <img width="60%" src="assets/reflection.gif">
+</p>
 
 ### 🎏 Fisheye
 <p align="center">
@@ -75,4 +77,3 @@ This project was developed with reference to the following repositories and reso
 - Code Refactoring   
 - Miscellaneous Bug Fixes   
 - Fix the OBJ loader (match the current scene’s scale, resolve normal issues)
-- ...
