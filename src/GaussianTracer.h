@@ -57,8 +57,7 @@ public:
 
 private:
 	void createContext();
-	void buildAccelationStructure();
-	void buildReflectionAccelationStructure();
+	void buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle);
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
@@ -100,14 +99,15 @@ private:
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
-	// Reflection state
-	std::vector<OptixInstance> reflection_instances;
-	OptixTraversableHandle     reflection_ias = 0;
-
 	Params* d_params;
+
+	// Reflection
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle     reflection_handle = 0;
 
 	// Reflection meshes
 	std::vector<Mesh> meshes;
 
+	// ETC
 	float3 current_lookat;
 };
