@@ -79,19 +79,19 @@ private:
 	// Gaussian data
 	GaussianData			    m_gsData;
 	std::vector<GaussianIndice> m_gsIndice;
-	size_t						vertex_count;
+	size_t						particle_count;
 	float						alpha_min;
+	
+	OptixTraversableHandle	   gaussian_handle;
+	std::vector<OptixInstance> gaussian_instances;
+
+	std::vector<float3>       vertices;
+	std::vector<unsigned int> indices;
+	CUdeviceptr               d_vertices;
+	CUdeviceptr               d_indices;
 
 	// Optix state
-	OptixDeviceContext		   m_context;
-	OptixBuildInput			   triangle_input;
-	OptixTraversableHandle	   m_root;
-	std::vector<OptixInstance> instances;
-
-	// Reflection state
-	std::vector<OptixInstance> reflection_instances;
-	OptixTraversableHandle     reflection_ias = 0;
-
+	OptixDeviceContext		    m_context;
 	OptixModule                 ptx_module;
 	OptixPipelineCompileOptions pipeline_compile_options;
 	OptixProgramGroup           raygen_prog_group;
@@ -100,13 +100,11 @@ private:
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
-	Params* d_params;
+	// Reflection state
+	std::vector<OptixInstance> reflection_instances;
+	OptixTraversableHandle     reflection_ias = 0;
 
-	// Geometry
-	std::vector<float3>       vertices;
-	std::vector<unsigned int> indices;
-	CUdeviceptr               d_vertices;
-	CUdeviceptr               d_indices;
+	Params* d_params;
 
 	// Reflection meshes
 	std::vector<Mesh> meshes;

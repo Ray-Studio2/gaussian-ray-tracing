@@ -18,10 +18,9 @@
 GaussianTracer::GaussianTracer(const std::string& filename)
     : m_gsData(filename)
 {
-    m_context      = nullptr;
-    triangle_input = {};
-    m_root         = 0;
-
+    m_context                = nullptr;
+    gaussian_handle          = 0;
+	gaussian_instances       = {};
     ptx_module               = 0;
     pipeline_compile_options = {};
     raygen_prog_group        = 0;
@@ -36,20 +35,45 @@ GaussianTracer::GaussianTracer(const std::string& filename)
 
     d_params = 0;
 
-    vertex_count = m_gsData.getVertexCount();
-    alpha_min    = 0.2f;
+    particle_count = m_gsData.getVertexCount();
+    alpha_min    = 0.01f;
 
     Icosahedron icosahedron = Icosahedron();
     vertices   = icosahedron.getVertices();
     indices    = icosahedron.getIndices();
     d_vertices = 0;
     d_indices  = 0;
+
     params.has_reflection_objects = false;
+
+    current_lookat = make_float3(0.0f);
 }
 
 GaussianTracer::~GaussianTracer()
 {
+    if (d_vertices) CUDA_CHECK(cudaFree((void*)d_vertices));
+    if (d_indices) CUDA_CHECK(cudaFree((void*)d_indices));
 
+    if (params.d_particles) CUDA_CHECK(cudaFree((void*)params.d_particles));
+    if (params.d_meshes) CUDA_CHECK(cudaFree((void*)params.d_meshes));
+    if (d_params) CUDA_CHECK(cudaFree((void*)d_params));
+
+    for (auto& mesh : meshes) {
+        if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
+        if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
+    }
+
+    if (pipeline) OPTIX_CHECK(optixPipelineDestroy(pipeline));
+    if (raygen_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(raygen_prog_group));
+    if (miss_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(miss_prog_group));
+    if (hit_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(hit_prog_group));
+    if (ptx_module) OPTIX_CHECK(optixModuleDestroy(ptx_module));
+
+    if (stream) CUDA_CHECK(cudaStreamDestroy(stream));
+
+    if (m_context) OPTIX_CHECK(optixDeviceContextDestroy(m_context));
+
+    if (primitives) delete primitives;
 }
 
 void GaussianTracer::setSize(unsigned int width, unsigned int height)
@@ -106,6 +130,7 @@ void GaussianTracer::createGaussiansASV1()
         cudaMemcpyHostToDevice
     ));
 
+	OptixBuildInput triangle_input = {};
     triangle_input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
     triangle_input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
     triangle_input.triangleArray.vertexStrideInBytes = sizeof(float3);
@@ -160,7 +185,7 @@ void GaussianTracer::createGaussiansASV1()
     CUDA_CHECK(cudaStreamSynchronize(0));
     CUDA_CHECK(cudaFree((void*)d_temp_buffer));
 
-    for (int i = 0; i < vertex_count; i++)
+    for (int i = 0; i < particle_count; i++)
     {
         OptixInstance instance = {};
 
@@ -203,13 +228,13 @@ void GaussianTracer::createGaussiansASV1()
         };
 
         memcpy(instance.transform, instance_transform, sizeof(float) * 12);
-        instance.instanceId = i;
-        instance.visibilityMask = 255;
-        instance.sbtOffset = 0;
-        instance.flags = OPTIX_INSTANCE_FLAG_NONE;
+        instance.instanceId        = i;
+        instance.visibilityMask    = 255;
+        instance.sbtOffset         = 0;
+        instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
         instance.traversableHandle = gas;
 
-        instances.push_back(instance);
+        gaussian_instances.push_back(instance);
     }
 }
 
@@ -360,24 +385,24 @@ void GaussianTracer::createGaussiansASV2()
     instance.flags = OPTIX_INSTANCE_FLAG_NONE;
     instance.traversableHandle = gas;
 
-    instances.push_back(instance);
+    gaussian_instances.push_back(instance);
 }
 
 void GaussianTracer::buildAccelationStructure()
 {
     CUdeviceptr d_instances;
-    const size_t instances_size_in_bytes = instances.size() * sizeof(OptixInstance);
+    const size_t instances_size_in_bytes = gaussian_instances.size() * sizeof(OptixInstance);
     CUDA_CHECK(cudaMalloc((void**)&d_instances, instances_size_in_bytes));
-    CUDA_CHECK(cudaMemcpy((void*)d_instances, instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy((void*)d_instances, gaussian_instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
 
     OptixBuildInput instance_input = {};
-    instance_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
-    instance_input.instanceArray.instances = d_instances;
-    instance_input.instanceArray.numInstances = static_cast<uint32_t>(instances.size());
+    instance_input.type                       = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+    instance_input.instanceArray.instances    = d_instances;
+    instance_input.instanceArray.numInstances = static_cast<uint32_t>(gaussian_instances.size());
 
     OptixAccelBuildOptions instance_accel_options = {};
     instance_accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
-    instance_accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
+    instance_accel_options.operation  = OPTIX_BUILD_OPERATION_BUILD;
 
     OptixAccelBufferSizes instance_buffer_sizes;
     OPTIX_CHECK(optixAccelComputeMemoryUsage(
@@ -395,7 +420,7 @@ void GaussianTracer::buildAccelationStructure()
     CUdeviceptr d_instance_temp_buffer;
     CUDA_CHECK(cudaMalloc((void**)&d_instance_temp_buffer, instance_buffer_sizes.tempSizeInBytes));
 
-    m_root = 0;
+    gaussian_handle = 0;
     OPTIX_CHECK(optixAccelBuild(
         m_context,
         0,
@@ -406,7 +431,7 @@ void GaussianTracer::buildAccelationStructure()
         instance_buffer_sizes.tempSizeInBytes,
         ias,
         instance_buffer_sizes.outputSizeInBytes,
-        &m_root,
+        &gaussian_handle,
         0,
         0
     ));
@@ -614,7 +639,7 @@ void GaussianTracer::createSBT()
 void GaussianTracer::initParams()
 {
 	params.output_buffer             = nullptr;
-	params.handle                    = m_root;
+	params.handle                    = gaussian_handle;
     params.k                         = MAX_K;
     params.t_min                     = 1e-3f;
     params.t_max                     = 1e5f;
@@ -626,14 +651,14 @@ void GaussianTracer::initParams()
     params.mode_fisheye              = false;
 
     {
-        GaussianParticle* particles = new GaussianParticle[vertex_count];
-        for (int i = 0; i < vertex_count; i++)
+        GaussianParticle* particles = new GaussianParticle[particle_count];
+        for (int i = 0; i < particle_count; i++)
         {
             particles[i] = m_gsData.m_particles[i];
         }
 
         CUdeviceptr d_particles;
-        const size_t particles_size = sizeof(GaussianParticle) * vertex_count;
+        const size_t particles_size = sizeof(GaussianParticle) * particle_count;
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_particles), particles_size));
         CUDA_CHECK(cudaMemcpy(
             reinterpret_cast<void*>(d_particles),
@@ -682,7 +707,7 @@ void GaussianTracer::render(CUDAOutputBuffer& output_buffer)
 
 void GaussianTracer::filterGaussians()
 {
-    for (int i = 0; i < vertex_count; i++)
+    for (int i = 0; i < particle_count; i++)
     {
         GaussianIndice gsIndex;
 
