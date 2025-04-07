@@ -113,6 +113,7 @@ static __forceinline__ __device__ float computeResponse(
 		2. * (x * y + r * z), 1. - 2. * (x * x + z * z), 2. * (y * z - r * x),
 		2. * (x * z - r * y), 2. * (y * z + r * x), 1. - 2. * (x * x + y * y)
 	};
+	//glm::mat3 R = gp.rotation_mat;
 
 	glm::mat3 inv_s(1.0f);
 	inv_s[0][0] = 1.0f / gp.scale.x;

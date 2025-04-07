@@ -1,6 +1,8 @@
 #pragma once
 
 #include <happly.h>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/quaternion.hpp>
 
 #include <vector>
 #include <string>
@@ -14,6 +16,8 @@ struct GaussianParticle
 	float4 rotation;
 	float  opacity;
 	float3 sh[16];
+	glm::mat4 transform;
+	glm::mat3 rotation_mat;
 };
 
 class GaussianData
@@ -23,8 +27,9 @@ public:
 	~GaussianData();
 
 	size_t getVertexCount() const;
-	std::vector<GaussianParticle> m_particles;
 	float3 getCenter();
+
+	std::vector<GaussianParticle> m_particles;
 
 private:
 	void loadPly();

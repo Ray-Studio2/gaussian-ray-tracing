@@ -13,7 +13,9 @@ GaussianData::GaussianData(const std::string& filename)
 
 GaussianData::~GaussianData()
 {
-    
+	if (plydata) {
+		delete plydata;
+	}
 }
 
 void GaussianData::loadPly()
@@ -47,25 +49,58 @@ void GaussianData::parse()
 	size_t vertexCount = getVertexCount();
 	std::cout << "Number of vertices: " << vertexCount << std::endl;
 
-    for (size_t i = 0; i < vertexCount; ++i)
-    {
+    for (size_t i = 0; i < vertexCount; ++i) {
         GaussianParticle p;
 
+		//p.position = make_float3(xProps[i], yProps[i], zProps[i]);
+  //      p.scale = make_float3(std::exp(scale0Props[i]), 
+  //                            std::exp(scale1Props[i]), 
+  //                            std::exp(scale2Props[i]));
+
+  //      const float norm = std::sqrt(rot0Props[i] * rot0Props[i] +
+  //                                   rot1Props[i] * rot1Props[i] +
+  //                                   rot2Props[i] * rot2Props[i] +
+  //                                   rot3Props[i] * rot3Props[i]);
+  //      p.rotation = make_float4(rot0Props[i] / norm,
+  //                               rot1Props[i] / norm,
+  //                               rot2Props[i] / norm,
+  //                               rot3Props[i] / norm);
+
+  //      p.opacity = 1.0f / (1.0f + std::exp(-opacityProps[i]));
+
+		float opacity = 1.0f / (1.0f + std::exp(-opacityProps[i]));
+
+		glm::vec3 position = glm::vec3(xProps[i], yProps[i], zProps[i]);
+		glm::mat4 translation_mat = glm::translate(glm::mat4(1.0f), position);
+
+		float s = std::sqrt(2.0f * std::log(opacity / 0.01f));      // TODO: alpha_min
+		glm::vec3 scale = glm::vec3(std::exp(scale0Props[i]),
+				                    std::exp(scale1Props[i]),
+				                    std::exp(scale2Props[i]));
+		scale = scale * s;
+		glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), scale);
+
+		glm::vec4 r = glm::vec4(rot0Props[i], rot1Props[i], rot2Props[i], rot3Props[i]);
+		float norm = std::sqrt(r.x * r.x +
+							   r.y * r.y +
+							   r.z * r.z +
+							   r.w * r.w);
+		r = r / norm;
+		glm::quat rot_quat = glm::quat(r.x, r.y, r.z, r.w);
+		glm::mat4 rotation_mat = glm::mat4_cast(rot_quat);
+
+		glm::mat4 transform = translation_mat * (rotation_mat * scale_mat);
+
 		p.position = make_float3(xProps[i], yProps[i], zProps[i]);
-        p.scale = make_float3(std::exp(scale0Props[i]), 
-                              std::exp(scale1Props[i]), 
-                              std::exp(scale2Props[i]));
+		p.rotation = make_float4(rot0Props[i] / norm,
+			                     rot1Props[i] / norm,
+			                     rot2Props[i] / norm,
+			                     rot3Props[i] / norm);
+		p.rotation_mat = glm::mat3(rotation_mat);
+		p.scale = make_float3(std::exp(scale0Props[i]), std::exp(scale1Props[i]), std::exp(scale2Props[i]));
+		p.opacity = opacity;
 
-        const float norm = std::sqrt(rot0Props[i] * rot0Props[i] +
-                                     rot1Props[i] * rot1Props[i] +
-                                     rot2Props[i] * rot2Props[i] +
-                                     rot3Props[i] * rot3Props[i]);
-        p.rotation = make_float4(rot0Props[i] / norm,
-                                 rot1Props[i] / norm,
-                                 rot2Props[i] / norm,
-                                 rot3Props[i] / norm);
-
-        p.opacity = 1.0f / (1.0f + std::exp(-opacityProps[i]));
+		p.transform = transform;
 
 		p.sh[0] = make_float3(f_dc0Props[i], f_dc1Props[i], f_dc2Props[i]);
 		for (int j = 1; j < 16; ++j)

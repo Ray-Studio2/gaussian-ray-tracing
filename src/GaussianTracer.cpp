@@ -36,7 +36,7 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     d_params = 0;
 
     particle_count = m_gsData.getVertexCount();
-    alpha_min    = 0.01f;
+    alpha_min    = 0.2f;
 
     Icosahedron icosahedron = Icosahedron();
     vertices   = icosahedron.getVertices();
@@ -203,23 +203,25 @@ void GaussianTracer::createGaussiansASV1()
         else
             continue;
 
-        float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
-        float scale_0 = m_gsData.m_particles[i].scale.x;
-        float scale_1 = m_gsData.m_particles[i].scale.y;
-        float scale_2 = m_gsData.m_particles[i].scale.z;
-        float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
-        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+        //float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
+        //float scale_0 = m_gsData.m_particles[i].scale.x;
+        //float scale_1 = m_gsData.m_particles[i].scale.y;
+        //float scale_2 = m_gsData.m_particles[i].scale.z;
+        //float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
+        //glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
 
-        float qw = m_gsData.m_particles[i].rotation.x;
-        float qx = m_gsData.m_particles[i].rotation.y;
-        float qy = m_gsData.m_particles[i].rotation.z;
-        float qz = m_gsData.m_particles[i].rotation.w;
-        glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
-        glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
+        //float qw = m_gsData.m_particles[i].rotation.x;
+        //float qx = m_gsData.m_particles[i].rotation.y;
+        //float qy = m_gsData.m_particles[i].rotation.z;
+        //float qz = m_gsData.m_particles[i].rotation.w;
+        //glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
+        //glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
 
-        glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+        //glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
 
-        glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+        //glm::mat4 _transform = translation_matrix * (rotation_matrix * scale_matrix);
+
+		glm::mat4 transform = m_gsData.m_particles[i].transform;
 
         float instance_transform[12] = {
             transform[0][0], transform[1][0], transform[2][0], transform[3][0],
