@@ -16,8 +16,6 @@ struct GaussianParticle
 	float4 rotation;
 	float  opacity;
 	float3 sh[16];
-	glm::mat4 transform;
-	glm::mat3 rotation_mat;
 };
 
 class GaussianData
@@ -29,7 +27,7 @@ public:
 	size_t getVertexCount() const;
 	float3 getCenter();
 
-	std::vector<GaussianParticle> m_particles;
+	std::vector<GaussianParticle> particles;
 
 private:
 	void loadPly();
