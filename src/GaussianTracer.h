@@ -64,7 +64,6 @@ private:
 	void createSBT();
 
 	void createGaussiansASV1();
-	void createGaussiansASV2();
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
@@ -73,13 +72,10 @@ private:
 	void sendGeometryAttributesToDevice(Primitive p);
 	void updateGeometryAttributesToDevice(Primitive& p);
 
-	void filterGaussians();
-
 	// Gaussian data
-	GaussianData			    m_gsData;
-	std::vector<GaussianIndice> m_gsIndice;
-	size_t						particle_count;
-	float						alpha_min;
+	GaussianData m_gsData;
+	size_t		 particle_count;
+	float		 alpha_min;
 	
 	OptixTraversableHandle	   gaussian_handle;
 	std::vector<OptixInstance> gaussian_instances;

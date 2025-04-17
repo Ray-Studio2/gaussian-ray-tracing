@@ -189,19 +189,12 @@ void GaussianTracer::createGaussiansASV1()
 
     for (int i = 0; i < particle_count; i++) {
         OptixInstance instance = {};
-        GaussianIndice gsIndex;
 
         float x = m_gsData.particles[i].position.x;
         float y = m_gsData.particles[i].position.y;
         float z = m_gsData.particles[i].position.z;
 
         float opacity = m_gsData.particles[i].opacity;
-        if (opacity > alpha_min) {
-            gsIndex.index = i;
-            m_gsIndice.push_back(gsIndex);
-        }
-        else
-            continue;
 
         float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
         //float s = sqrtf(2.0f * logf(opacity / alpha_min));
@@ -555,23 +548,6 @@ void GaussianTracer::render(CUDAOutputBuffer& output_buffer)
 
     output_buffer.unmap();
     CUDA_SYNC_CHECK();
-}
-
-void GaussianTracer::filterGaussians()
-{
-    for (int i = 0; i < particle_count; i++)
-    {
-        GaussianIndice gsIndex;
-
-        float opacity = m_gsData.particles[i].opacity;
-
-        if (opacity > alpha_min) {
-            gsIndex.index = i;
-            m_gsIndice.push_back(gsIndex);
-        }
-        else
-            continue;
-    }
 }
 
 void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)

@@ -106,11 +106,6 @@ struct RayPayload
 	Vertex reflection_vertex;
 };
 
-struct GaussianIndice
-{
-	size_t index;
-};
-
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
 typedef Record<HitData>    HitRecord;
