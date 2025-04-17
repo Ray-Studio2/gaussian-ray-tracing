@@ -105,25 +105,25 @@ static __forceinline__ __device__ float computeResponse(
 	float y = gp.rotation.z;
 	float z = gp.rotation.w;
 
-	glm::quat quat = glm::quat(r, x, y, z);
-	glm::mat3 R = glm::mat3_cast(quat);
+	// glm::quat quat = glm::quat(r, x, y, z);
+	glm::mat3 R = glm::mat3_cast(gp.rotation);
+	//R = glm::transpose(R);
+	glm::mat3 RT = glm::transpose(R);
 
-	//glm::mat3 R = {
-	//	1. - 2. * (y * y + z * z), 2. * (x * y - r * z), 2. * (x * z + r * y),
-	//	2. * (x * y + r * z), 1. - 2. * (x * x + z * z), 2. * (y * z - r * x),
-	//	2. * (x * z - r * y), 2. * (y * z + r * x), 1. - 2. * (x * x + y * y)
-	//};
-	//glm::mat3 R = gp.rotation_mat;
+	/*glm::mat3 R = {
+		1. - 2. * (y * y + z * z), 2. * (x * y - r * z), 2. * (x * z + r * y),
+		2. * (x * y + r * z), 1. - 2. * (x * x + z * z), 2. * (y * z - r * x),
+		2. * (x * z - r * y), 2. * (y * z + r * x), 1. - 2. * (x * x + y * y)
+	};*/
 
 	glm::mat3 inv_s(1.0f);
 	inv_s[0][0] = 1.0f / gp.scale.x;
 	inv_s[1][1] = 1.0f / gp.scale.y;
 	inv_s[2][2] = 1.0f / gp.scale.z;
 
-	glm::mat3 invCov = R * inv_s;
-
-	//glm::mat3 invCov = inv_s * R;
-	//invCov = glm::transpose(invCov) * invCov;
+	//glm::mat3 invCov = R * inv_s;
+	glm::mat3 invCov = inv_s * RT;
+	/*invCov = glm::transpose(invCov) * invCov;*/
 
 	glm::vec3 _o = glm::vec3(o.x, o.y, o.z);
 	glm::vec3 _d = glm::vec3(d.x, d.y, d.z);
@@ -236,7 +236,8 @@ static __forceinline__ __device__ float3 trace(
 
 			if (params.alpha_min < alpha_hit)
 			{
-				float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
+				float3 pos = make_float3(gp.position.x, gp.position.y, gp.position.z);
+				float3 L_hit = computeRadiance(gp, normalize(ray_direction));
 
 				L += T * alpha_hit * L_hit;
 				T *= 1.0f - alpha_hit;

@@ -190,37 +190,127 @@ void GaussianTracer::createGaussiansASV1()
     for (int i = 0; i < particle_count; i++) {
         OptixInstance instance = {};
 
-        float x = m_gsData.particles[i].position.x;
-        float y = m_gsData.particles[i].position.y;
-        float z = m_gsData.particles[i].position.z;
+  //      float x = m_gsData.particles[i].position.x;
+  //      float y = m_gsData.particles[i].position.y;
+  //      float z = m_gsData.particles[i].position.z;
+
+  //      float opacity = m_gsData.particles[i].opacity;
+
+  //      //float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
+  //      float s = sqrtf(2.0f * logf(opacity / alpha_min));
+  //      float scale_0 = m_gsData.particles[i].scale.x;
+  //      float scale_1 = m_gsData.particles[i].scale.y;
+  //      float scale_2 = m_gsData.particles[i].scale.z;
+  //      //float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
+		//float3 scale = make_float3(scale_0, scale_1, scale_2);
+  //      glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+
+  //      float qw = m_gsData.particles[i].rotation.x;
+  //      float qx = m_gsData.particles[i].rotation.y;
+  //      float qy = m_gsData.particles[i].rotation.z;
+  //      float qz = m_gsData.particles[i].rotation.w;
+  //      glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
+  //      glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
+
+  //      glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+
+  //      glm::mat4 transform = translation_matrix * rotation_matrix * scale_matrix;
 
         float opacity = m_gsData.particles[i].opacity;
 
-        float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
-        //float s = sqrtf(2.0f * logf(opacity / alpha_min));
-        float scale_0 = m_gsData.particles[i].scale.x;
-        float scale_1 = m_gsData.particles[i].scale.y;
-        float scale_2 = m_gsData.particles[i].scale.z;
-        //float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
-		float3 scale = make_float3(scale_0, scale_1, scale_2);
-        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+		float s = sqrtf(2.0f * logf(opacity / alpha_min));
+		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), m_gsData.particles[i].scale * s);
+		glm::mat4 rotation_matrix = glm::mat4_cast(m_gsData.particles[i].rotation);
+		glm::mat4 RT = glm::transpose(rotation_matrix);
+		//rotation_matrix = glm::transpose(rotation_matrix);
+		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_gsData.particles[i].position);
+        //glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+        glm::mat4 transform = translation_matrix * (scale_matrix * RT);
+		//glm::mat4 transform = scale_matrix * rotation_matrix * translation_matrix;
 
-        float qw = m_gsData.particles[i].rotation.x;
-        float qx = m_gsData.particles[i].rotation.y;
-        float qy = m_gsData.particles[i].rotation.z;
-        float qz = m_gsData.particles[i].rotation.w;
-        glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
-        glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
+		//std::vector<float3> t_vertices(vertices.size());
+  //      CUdeviceptr _d_v;
+		//for (int k = 0; k < vertices.size(); k++) {
+		//	glm::vec3 v = glm::vec3(vertices[k].x, vertices[k].y, vertices[k].z);
+  //          //v = glm::vec4(v, 1.0f);
+		//	glm::vec4 transformed_v = transform * glm::vec4(v, 1.0f);
+		//	//glm::vec3 transformed_v = s * (m_gsData.particles[i].scale * (glm::mat3(rotation_matrix) * v)) + m_gsData.particles[i].position;
+  //          t_vertices[k].x = transformed_v.x;
+  //          t_vertices[k].y = transformed_v.y;
+  //          t_vertices[k].z = transformed_v.z;
+		//}
 
-        glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+  //      const size_t vertices_size_in_bytes = t_vertices.size() * sizeof(float3);
+  //      CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_v), vertices_size_in_bytes));
+  //      CUDA_CHECK(cudaMemcpy(
+  //          reinterpret_cast<void*>(_d_v),
+  //          t_vertices.data(),
+  //          vertices_size_in_bytes,
+  //          cudaMemcpyHostToDevice
+  //      ));
 
-        glm::mat4 transform = translation_matrix * rotation_matrix * scale_matrix;
+  //      OptixBuildInput triangle_input = {};
+  //      triangle_input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+  //      triangle_input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+  //      triangle_input.triangleArray.vertexStrideInBytes = sizeof(float3);
+  //      triangle_input.triangleArray.numVertices = static_cast<uint32_t>(vertices.size());
+  //      triangle_input.triangleArray.vertexBuffers = &_d_v;
+
+  //      triangle_input.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+  //      triangle_input.triangleArray.indexStrideInBytes = sizeof(unsigned int) * 3;
+  //      triangle_input.triangleArray.numIndexTriplets = (unsigned int)indices.size() / 3;
+  //      triangle_input.triangleArray.indexBuffer = d_indices;
+
+  //      unsigned int triangleInputFlags[1] = { };
+  //      triangle_input.triangleArray.flags = triangleInputFlags;
+  //      triangle_input.triangleArray.numSbtRecords = 1;
+
+  //      OptixAccelBuildOptions accel_options = {};
+  //      accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
+  //      accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+  //      OptixAccelBufferSizes gas_buffer_sizes;
+  //      OPTIX_CHECK(optixAccelComputeMemoryUsage(
+  //          m_context,
+  //          &accel_options,
+  //          &triangle_input,
+  //          1,
+  //          &gas_buffer_sizes
+  //      ));
+
+  //      CUdeviceptr d_gas;
+  //      CUDA_CHECK(cudaMalloc((void**)&d_gas, gas_buffer_sizes.outputSizeInBytes));
+
+  //      CUdeviceptr d_temp_buffer;
+  //      CUDA_CHECK(cudaMalloc((void**)&d_temp_buffer, gas_buffer_sizes.tempSizeInBytes));
+
+  //      OptixTraversableHandle gas;
+
+  //      OPTIX_CHECK(optixAccelBuild(
+  //          m_context,
+  //          0,
+  //          &accel_options,
+  //          &triangle_input,
+  //          1,
+  //          d_temp_buffer,
+  //          gas_buffer_sizes.tempSizeInBytes,
+  //          d_gas,
+  //          gas_buffer_sizes.outputSizeInBytes,
+  //          &gas,
+  //          0,
+  //          0
+  //      ));
 
         float instance_transform[12] = {
             transform[0][0], transform[1][0], transform[2][0], transform[3][0],
             transform[0][1], transform[1][1], transform[2][1], transform[3][1],
             transform[0][2], transform[1][2], transform[2][2], transform[3][2],
         };
+        //float instance_transform[12] = {
+        //    1, 0, 0, 0,
+        //    0, 1, 0, 0,
+        //    0, 0, 1, 0,
+        //};
 
         memcpy(instance.transform, instance_transform, sizeof(float) * 12);
         instance.instanceId        = i;
@@ -490,7 +580,7 @@ void GaussianTracer::initParams()
     params.t_max                     = 1e5f;
     params.T_min                     = 0.03f;
     params.alpha_min                 = alpha_min;
-    params.sh_degree_max             = 0;
+    params.sh_degree_max             = 3;
 	params.reflection_handle         = reflection_handle;
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;

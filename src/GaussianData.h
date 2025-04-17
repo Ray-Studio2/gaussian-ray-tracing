@@ -11,9 +11,13 @@
 
 struct GaussianParticle
 {
-	float3 position;
-	float3 scale;
-	float4 rotation;
+	//float3 position;
+	//float3 scale;
+	//float4 rotation;
+	glm::vec3 position;
+	glm::vec3 scale;
+	glm::quat rotation;
+
 	float  opacity;
 	float3 sh[16];
 };
