@@ -496,18 +496,12 @@ void GaussianTracer::initParams()
     params.mode_fisheye              = false;
 
     {
-        GaussianParticle* particles = new GaussianParticle[particle_count];
-        for (int i = 0; i < particle_count; i++)
-        {
-            particles[i] = m_gsData.particles[i];
-        }
-
         CUdeviceptr d_particles;
         const size_t particles_size = sizeof(GaussianParticle) * particle_count;
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_particles), particles_size));
         CUDA_CHECK(cudaMemcpy(
             reinterpret_cast<void*>(d_particles),
-            particles,
+			m_gsData.particles.data(),
             particles_size,
             cudaMemcpyHostToDevice
         ));
