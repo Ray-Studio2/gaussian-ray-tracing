@@ -38,7 +38,7 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     d_params = 0;
 
     particle_count = m_gsData.getVertexCount();
-    alpha_min    = 0.2f;
+    alpha_min    = 0.01f;
 
     Icosahedron icosahedron = Icosahedron();
     vertices   = icosahedron.getVertices();
@@ -186,184 +186,48 @@ void GaussianTracer::createGaussiansASV1()
 
     CUDA_CHECK(cudaStreamSynchronize(0));
     CUDA_CHECK(cudaFree((void*)d_temp_buffer));
-    
-    std::vector<float3> vs;
-	std::vector<unsigned int> is;
-    for (int i = 0; i < particle_count; i++)
-    {
-        if (i == 10000)
-            break;
 
+    for (int i = 0; i < particle_count; i++) {
         OptixInstance instance = {};
-
         GaussianIndice gsIndex;
 
-		float3 scale = m_gsData.particles[i].scale;
-		float4 rot   = m_gsData.particles[i].rotation;
-		float3 trans = m_gsData.particles[i].position;
+        float x = m_gsData.particles[i].position.x;
+        float y = m_gsData.particles[i].position.y;
+        float z = m_gsData.particles[i].position.z;
 
-        float goldenRatio = 1.618033988749895;
-        float icosaEdge = 1.323169076499215;
-        float icosaVrtScale = 0.5 * icosaEdge;
-
-        float minResponse = 0.0113f;
-        float b = 2;
-        float a = -4.5f / powf(3.0f, static_cast<float>(b));
-        float kernel_scale = powf(logf(minResponse) / a, 1.0f / b);
-
-        float3 icosaHedronVrt[12] = {
-            make_float3(-1, goldenRatio, 0), make_float3(1, goldenRatio, 0), make_float3(0, 1, -goldenRatio),
-            make_float3(-goldenRatio, 0, -1), make_float3(-goldenRatio, 0, 1), make_float3(0, 1, goldenRatio),
-            make_float3(goldenRatio, 0, 1), make_float3(0, -1, goldenRatio), make_float3(-1, -goldenRatio, 0),
-            make_float3(0, -1, -goldenRatio), make_float3(goldenRatio, 0, -1), make_float3(1, -goldenRatio, 0) };
-
-        float3 kscl = kernel_scale * scale * icosaVrtScale;
-
-        float3 rotation[3];
-        float r = rot.x;
-		float x = rot.y;
-		float y = rot.z;
-		float z = rot.w;
-
-        rotation[0] = make_float3((1.f - 2.f * (y * y + z * z)), 2.f * (x * y - r * z), 2.f * (x * z + r * y));
-        rotation[1] = make_float3(2.f * (x * y + r * z), (1.f - 2.f * (x * x + z * z)), 2.f * (y * z - r * x));
-        rotation[2] = make_float3(2.f * (x * z - r * y), 2.f * (y * z + r * x), (1.f - 2.f * (x * x + y * y)));
-
-        //using float33 = float3[3];
-        //VECTOR_MATH_API float3 operator*(const float3 & p, const float33 & m) {
-        //    return make_float3(dot(m[0], p), dot(m[1], p), dot(m[2], p));
-        //}
-        float3 vrt;
-        for (int i = 0; i < 12; ++i) {
-			vrt = icosaHedronVrt[i] * kscl;
-            vrt = make_float3(dot(rotation[0], vrt), dot(rotation[1], vrt), dot(rotation[2], vrt));
-            vrt = vrt + trans;
-            vs.push_back(vrt);
+        float opacity = m_gsData.particles[i].opacity;
+        if (opacity > alpha_min) {
+            gsIndex.index = i;
+            m_gsIndice.push_back(gsIndex);
         }
+        else
+            continue;
 
-        const int3 icosaHedronTri[20] = {
-            make_int3(0, 1, 2), make_int3(0, 2, 3), make_int3(0, 3, 4), make_int3(0, 4, 5), make_int3(0, 5, 1),
-            make_int3(6, 1, 5), make_int3(6, 5, 7), make_int3(6, 7, 11), make_int3(6, 11, 10), make_int3(6, 10, 1),
-            make_int3(8, 4, 3), make_int3(8, 3, 9), make_int3(8, 9, 11), make_int3(8, 11, 7), make_int3(8, 7, 4),
-            make_int3(9, 3, 2), make_int3(9, 2, 10), make_int3(9, 10, 11),
-            make_int3(5, 4, 7), make_int3(1, 10, 2) };
-
-        CUdeviceptr d_vs;
-        CUdeviceptr d_is;
-
-        const size_t vertices_size_in_bytes = vs.size() * sizeof(float3);
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_vs), vertices_size_in_bytes));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_vs),
-            vs.data(),
-            vertices_size_in_bytes,
-            cudaMemcpyHostToDevice
-        ));
-
-        //const size_t indices_size_in_bytes = is.size() * sizeof(int3);
-		const size_t indices_size_in_bytes = sizeof(icosaHedronTri);
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_is), indices_size_in_bytes));
-        CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_is),
-            icosaHedronTri,
-            indices_size_in_bytes,
-            cudaMemcpyHostToDevice
-        ));
-
-        OptixBuildInput input = {};
-        input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
-        input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-        input.triangleArray.vertexStrideInBytes = sizeof(float3);
-        input.triangleArray.numVertices = vs.size();
-        input.triangleArray.vertexBuffers = &d_vs;
-
-        input.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-        input.triangleArray.indexStrideInBytes = sizeof(unsigned int) * 3;
-        input.triangleArray.numIndexTriplets = (unsigned int)indices.size() / 3;
-        input.triangleArray.indexBuffer = d_indices;
-
-        unsigned int triangleInputFlags[1] = {};
-        input.triangleArray.flags = triangleInputFlags;
-        input.triangleArray.numSbtRecords = 1;
-
-        OptixAccelBuildOptions accel_options = {};
-        accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;
-        accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
-
-        OptixAccelBufferSizes gas_buffer_sizes;
-        OPTIX_CHECK(optixAccelComputeMemoryUsage(
-            m_context,
-            &accel_options,
-            &input,
-            1,
-            &gas_buffer_sizes
-        ));
-
-        CUdeviceptr d_gas;
-        CUDA_CHECK(cudaMalloc((void**)&d_gas, gas_buffer_sizes.outputSizeInBytes));
-
-        CUdeviceptr d_temp_buffer;
-        CUDA_CHECK(cudaMalloc((void**)&d_temp_buffer, gas_buffer_sizes.tempSizeInBytes));
-
-        OptixTraversableHandle gas;
-        OPTIX_CHECK(optixAccelBuild(
-            m_context,
-            0,
-            &accel_options,
-            &input,
-            1,
-            d_temp_buffer,
-            gas_buffer_sizes.tempSizeInBytes,
-            d_gas,
-            gas_buffer_sizes.outputSizeInBytes,
-            &gas,
-            0,
-            0
-        ));
-
-        CUDA_CHECK(cudaStreamSynchronize(0));
-        CUDA_CHECK(cudaFree((void*)d_temp_buffer));
-
-        //float x = m_gsData.particles[i].position.x;
-        //float y = m_gsData.particles[i].position.y;
-        //float z = m_gsData.particles[i].position.z;
-
-        //float opacity = m_gsData.particles[i].opacity;
-        //if (opacity > alpha_min) {
-        //    gsIndex.index = i;
-        //    m_gsIndice.push_back(gsIndex);
-        //}
-        //else
-        //    continue;
-
-        //float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
-        //float scale_0 = m_gsData.particles[i].scale.x;
-        //float scale_1 = m_gsData.particles[i].scale.y;
-        //float scale_2 = m_gsData.particles[i].scale.z;
+        float s = std::sqrt(2.0f * std::log(opacity / alpha_min));
+        //float s = sqrtf(2.0f * logf(opacity / alpha_min));
+        float scale_0 = m_gsData.particles[i].scale.x;
+        float scale_1 = m_gsData.particles[i].scale.y;
+        float scale_2 = m_gsData.particles[i].scale.z;
         //float3 scale = make_float3(scale_0 * s, scale_1 * s, scale_2 * s);
-        //glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+		float3 scale = make_float3(scale_0, scale_1, scale_2);
+        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
 
-        //float qw = m_gsData.particles[i].rotation.x;
-        //float qx = m_gsData.particles[i].rotation.y;
-        //float qy = m_gsData.particles[i].rotation.z;
-        //float qz = m_gsData.particles[i].rotation.w;
-        //glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
-        //glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
+        float qw = m_gsData.particles[i].rotation.x;
+        float qx = m_gsData.particles[i].rotation.y;
+        float qy = m_gsData.particles[i].rotation.z;
+        float qz = m_gsData.particles[i].rotation.w;
+        glm::quat rot_quat = glm::quat(qw, qx, qy, qz);
+        glm::mat4 rotation_matrix = glm::mat4_cast(rot_quat);
 
-        //glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+        glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
 
-        //glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+        glm::mat4 transform = translation_matrix * rotation_matrix * scale_matrix;
 
-        //float instance_transform[12] = {
-        //    transform[0][0], transform[1][0], transform[2][0], transform[3][0],
-        //    transform[0][1], transform[1][1], transform[2][1], transform[3][1],
-        //    transform[0][2], transform[1][2], transform[2][2], transform[3][2],
-        //};
-		float instance_transform[12] = {
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-		};
+        float instance_transform[12] = {
+            transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+            transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+            transform[0][2], transform[1][2], transform[2][2], transform[3][2],
+        };
 
         memcpy(instance.transform, instance_transform, sizeof(float) * 12);
         instance.instanceId        = i;

@@ -53,9 +53,6 @@ void GaussianData::parse()
         GaussianParticle p;
 
         p.position = make_float3(xProps[i], yProps[i], zProps[i]);
-        //p.scale = make_float3(std::exp(scale0Props[i]), 
-        //                      std::exp(scale1Props[i]), 
-        //                      std::exp(scale2Props[i]));
 		p.scale = make_float3(expf(scale0Props[i]),
 			                  expf(scale1Props[i]),
 			                  expf(scale2Props[i]));
