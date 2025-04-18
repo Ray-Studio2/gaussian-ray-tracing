@@ -544,7 +544,8 @@ OptixTraversableHandle GaussianTracer::createGAS(std::vector<float3> const& vs, 
 
     CUDA_CHECK(cudaStreamSynchronize(0));
     CUDA_CHECK(cudaFree((void*)d_temp_buffer));
-
+	CUDA_CHECK(cudaFree((void*)d_vs));
+	CUDA_CHECK(cudaFree((void*)d_is));
     return gas;
 }
 
