@@ -100,38 +100,27 @@ static __forceinline__ __device__ float computeResponse(
 {
 	glm::vec3 mu = glm::vec3(gp.position.x, gp.position.y, gp.position.z);
 
-	float r = gp.rotation.x;
-	float x = gp.rotation.y;
-	float y = gp.rotation.z;
-	float z = gp.rotation.w;
-
-	/*glm::quat quat = glm::quat(r, x, y, z);
-	glm::mat3 R = glm::mat3_cast(quat);*/
-
-	glm::mat3 R = {
-		1. - 2. * (y * y + z * z), 2. * (x * y - r * z), 2. * (x * z + r * y),
-		2. * (x * y + r * z), 1. - 2. * (x * x + z * z), 2. * (y * z - r * x),
-		2. * (x * z - r * y), 2. * (y * z + r * x), 1. - 2. * (x * x + y * y)
-	};
+	glm::mat3 R = glm::mat3_cast(gp.rotation);
+	glm::mat3 RT = glm::transpose(R);
 
 	glm::mat3 inv_s(1.0f);
 	inv_s[0][0] = 1.0f / gp.scale.x;
 	inv_s[1][1] = 1.0f / gp.scale.y;
 	inv_s[2][2] = 1.0f / gp.scale.z;
 
-	glm::mat3 invCov = inv_s * R;
-	invCov = glm::transpose(invCov) * invCov;
+	glm::mat3 invCov = inv_s * RT;
 
 	glm::vec3 _o = glm::vec3(o.x, o.y, o.z);
 	glm::vec3 _d = glm::vec3(d.x, d.y, d.z);
 
-	glm::vec3 temp = invCov * _d;
-	glm::vec3 p = _o + (glm::dot(mu - _o, temp) / glm::dot(_d, temp)) * _d;
+	glm::vec3 o_g = invCov * (_o - mu);
+	glm::vec3 d_g = invCov * _d;
 
-	glm::vec3 a = mu - p;
-	glm::vec3 b = invCov * (p - mu);
+	float d_val = -glm::dot(o_g, d_g) / fmaxf(1e-6f, glm::dot(d_g, d_g));
+	glm::vec3 pos = _o + d_val * _d;
+	glm::vec3 p_g = invCov * (mu - pos);
 
-	return exp(glm::dot(a, b));
+	return exp(-0.5f * glm::dot(p_g, p_g));
 }
 
 static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, float3& d)
@@ -206,6 +195,7 @@ static __forceinline__ __device__ float3 trace(
 			RAY_TYPE_RADIANCE,        // missSBTIndex
 			u0, u1
 		);
+
 		t_curr = prd.k_closest[params.k - 1].t + epsilon;
 
 		for (int i = 0; i < params.k; i++)
@@ -218,11 +208,13 @@ static __forceinline__ __device__ float3 trace(
 
 			GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
 
-			float alpha_hit = computeResponse(gp, ray_origin, ray_direction) * gp.opacity;
+			float alpha_hit = computeResponse(gp, ray_origin, ray_direction);
+			alpha_hit = fminf(0.99f, alpha_hit * gp.opacity);
 
 			if (params.alpha_min < alpha_hit)
 			{
-				float3 L_hit = computeRadiance(gp, normalize(gp.position - ray_origin));
+				float3 pos = make_float3(gp.position.x, gp.position.y, gp.position.z);
+				float3 L_hit = computeRadiance(gp, normalize(ray_direction));
 
 				L += T * alpha_hit * L_hit;
 				T *= 1.0f - alpha_hit;
@@ -312,7 +304,7 @@ extern "C" __global__ void __raygen__raygeneration()
 		ray_direction = reflect(ray_direction, hit_point.normal);
 		recursion_count++;
 	}
-
+	
 	const uint3    launch_index = optixGetLaunchIndex();
 	const unsigned int image_index = launch_index.y * params.width + launch_index.x;
 	float3 accum_color = result;
