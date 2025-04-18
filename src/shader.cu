@@ -218,6 +218,9 @@ static __forceinline__ __device__ float3 trace(
 			RAY_TYPE_RADIANCE,        // missSBTIndex
 			u0, u1
 		);
+
+		/*if (prd.hit_count > 0)
+			return make_float3(1.0f, 0.0f, 0.0f);*/
 		t_curr = prd.k_closest[params.k - 1].t + epsilon;
 
 		for (int i = 0; i < params.k; i++)

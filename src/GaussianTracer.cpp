@@ -224,9 +224,9 @@ void GaussianTracer::createGaussiansASV1()
 		glm::mat4 RT = glm::transpose(rotation_matrix);
 		//rotation_matrix = glm::transpose(rotation_matrix);
 		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_gsData.particles[i].position);
-        //glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
-        glm::mat4 transform = translation_matrix * (scale_matrix * RT);
-		//glm::mat4 transform = scale_matrix * rotation_matrix * translation_matrix;
+        glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+        //glm::mat4 transform = translation_matrix * (scale_matrix * RT);
+		//glm::mat4 transform = scale_matrix * rotation_matrix * translation_matrix;    
 
 		//std::vector<float3> t_vertices(vertices.size());
   //      CUdeviceptr _d_v;
