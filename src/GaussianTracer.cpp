@@ -20,9 +20,8 @@
 GaussianTracer::GaussianTracer(const std::string& filename)
     : m_gsData(filename)
 {
+    // Optix state
     m_context                = nullptr;
-    gaussian_handle          = 0;
-	gaussian_instances       = {};
     ptx_module               = 0;
     pipeline_compile_options = {};
     raygen_prog_group        = 0;
@@ -30,6 +29,10 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     hit_prog_group           = 0;
     pipeline                 = 0;
     sbt                      = {};
+
+    gaussian_handle = 0;
+    gaussian_instances = {};
+
     stream                   = 0;
 
     params = {};
@@ -43,8 +46,6 @@ GaussianTracer::GaussianTracer(const std::string& filename)
     Icosahedron icosahedron = Icosahedron();
     vertices   = icosahedron.getVertices();
     indices    = icosahedron.getIndices();
-    d_vertices = 0;
-    d_indices  = 0;
 
     params.has_reflection_objects = false;
 
@@ -53,9 +54,6 @@ GaussianTracer::GaussianTracer(const std::string& filename)
 
 GaussianTracer::~GaussianTracer()
 {
-    if (d_vertices) CUDA_CHECK(cudaFree((void*)d_vertices));
-    if (d_indices) CUDA_CHECK(cudaFree((void*)d_indices));
-
     if (params.d_particles) CUDA_CHECK(cudaFree((void*)params.d_particles));
     if (params.d_meshes) CUDA_CHECK(cudaFree((void*)params.d_meshes));
     if (d_params) CUDA_CHECK(cudaFree((void*)d_params));
@@ -110,91 +108,6 @@ void GaussianTracer::createContext()
     OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &context));
 
     m_context = context;
-}
-
-void GaussianTracer::createGaussiansASV1()
-{
-	OptixTraversableHandle gas = createGAS(vertices, indices);
-
-    for (int i = 0; i < particle_count; i++) {
-        OptixInstance instance = {};
-
-        float opacity = m_gsData.particles[i].opacity;
-
-		float s = sqrtf(2.0f * logf(opacity / alpha_min));
-		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), m_gsData.particles[i].scale * s);
-		glm::mat4 rotation_matrix = glm::mat4_cast(m_gsData.particles[i].rotation);
-		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_gsData.particles[i].position);
-        glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
-
-        float instance_transform[12] = {
-            transform[0][0], transform[1][0], transform[2][0], transform[3][0],
-            transform[0][1], transform[1][1], transform[2][1], transform[3][1],
-            transform[0][2], transform[1][2], transform[2][2], transform[3][2],
-        };
-
-        memcpy(instance.transform, instance_transform, sizeof(float) * 12);
-        instance.instanceId        = i;
-        instance.visibilityMask    = 255;
-        instance.sbtOffset         = 0;
-        instance.flags             = OPTIX_INSTANCE_FLAG_NONE;
-        instance.traversableHandle = gas;
-
-        gaussian_instances.push_back(instance);
-    }
-}
-
-void GaussianTracer::buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle)
-{
-    CUdeviceptr d_instances;
-    const size_t instances_size_in_bytes = instances.size() * sizeof(OptixInstance);
-    CUDA_CHECK(cudaMalloc((void**)&d_instances, instances_size_in_bytes));
-    CUDA_CHECK(cudaMemcpy((void*)d_instances, instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
-
-    OptixBuildInput instance_input = {};
-    instance_input.type                       = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
-    instance_input.instanceArray.instances    = d_instances;
-    instance_input.instanceArray.numInstances = static_cast<uint32_t>(instances.size());
-
-    OptixAccelBuildOptions instance_accel_options = {};
-    instance_accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
-    instance_accel_options.operation  = OPTIX_BUILD_OPERATION_BUILD;
-
-    OptixAccelBufferSizes instance_buffer_sizes;
-    OPTIX_CHECK(optixAccelComputeMemoryUsage(
-        m_context,
-        &instance_accel_options,
-        &instance_input,
-        1,
-        &instance_buffer_sizes
-    ));
-
-    OptixTraversableHandle ias;
-
-    CUDA_CHECK(cudaMalloc((void**)&ias, instance_buffer_sizes.outputSizeInBytes));
-
-    CUdeviceptr d_instance_temp_buffer;
-    CUDA_CHECK(cudaMalloc((void**)&d_instance_temp_buffer, instance_buffer_sizes.tempSizeInBytes));
-
-    handle = 0;
-    OPTIX_CHECK(optixAccelBuild(
-        m_context,
-        0,
-        &instance_accel_options,
-        &instance_input,
-        1,
-        d_instance_temp_buffer,
-        instance_buffer_sizes.tempSizeInBytes,
-        ias,
-        instance_buffer_sizes.outputSizeInBytes,
-        &handle,
-        0,
-        0
-    ));
-
-    CUDA_CHECK(cudaStreamSynchronize(0));
-    CUDA_CHECK(cudaFree((void*)d_instance_temp_buffer));
-    CUDA_CHECK(cudaFree((void*)d_instances));
 }
 
 void GaussianTracer::createModule()
@@ -390,6 +303,91 @@ void GaussianTracer::createSBT()
 	sbt.hitgroupRecordBase          = d_hit_record;
 	sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hit_record_size);
 	sbt.hitgroupRecordCount         = 1;
+}
+
+void GaussianTracer::createGaussiansASV1()
+{
+    OptixTraversableHandle gas = createGAS(vertices, indices);
+
+    for (int i = 0; i < particle_count; i++) {
+        OptixInstance instance = {};
+
+        float opacity = m_gsData.particles[i].opacity;
+
+        float s = sqrtf(2.0f * logf(opacity / alpha_min));
+        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), m_gsData.particles[i].scale * s);
+        glm::mat4 rotation_matrix = glm::mat4_cast(m_gsData.particles[i].rotation);
+        glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_gsData.particles[i].position);
+        glm::mat4 transform = translation_matrix * (rotation_matrix * scale_matrix);
+
+        float instance_transform[12] = {
+            transform[0][0], transform[1][0], transform[2][0], transform[3][0],
+            transform[0][1], transform[1][1], transform[2][1], transform[3][1],
+            transform[0][2], transform[1][2], transform[2][2], transform[3][2],
+        };
+
+        memcpy(instance.transform, instance_transform, sizeof(float) * 12);
+        instance.instanceId = i;
+        instance.visibilityMask = 255;
+        instance.sbtOffset = 0;
+        instance.flags = OPTIX_INSTANCE_FLAG_NONE;
+        instance.traversableHandle = gas;
+
+        gaussian_instances.push_back(instance);
+    }
+}
+
+void GaussianTracer::buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle)
+{
+    CUdeviceptr d_instances;
+    const size_t instances_size_in_bytes = instances.size() * sizeof(OptixInstance);
+    CUDA_CHECK(cudaMalloc((void**)&d_instances, instances_size_in_bytes));
+    CUDA_CHECK(cudaMemcpy((void*)d_instances, instances.data(), instances_size_in_bytes, cudaMemcpyHostToDevice));
+
+    OptixBuildInput instance_input = {};
+    instance_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+    instance_input.instanceArray.instances = d_instances;
+    instance_input.instanceArray.numInstances = static_cast<uint32_t>(instances.size());
+
+    OptixAccelBuildOptions instance_accel_options = {};
+    instance_accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
+    instance_accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+    OptixAccelBufferSizes instance_buffer_sizes;
+    OPTIX_CHECK(optixAccelComputeMemoryUsage(
+        m_context,
+        &instance_accel_options,
+        &instance_input,
+        1,
+        &instance_buffer_sizes
+    ));
+
+    OptixTraversableHandle ias;
+
+    CUDA_CHECK(cudaMalloc((void**)&ias, instance_buffer_sizes.outputSizeInBytes));
+
+    CUdeviceptr d_instance_temp_buffer;
+    CUDA_CHECK(cudaMalloc((void**)&d_instance_temp_buffer, instance_buffer_sizes.tempSizeInBytes));
+
+    handle = 0;
+    OPTIX_CHECK(optixAccelBuild(
+        m_context,
+        0,
+        &instance_accel_options,
+        &instance_input,
+        1,
+        d_instance_temp_buffer,
+        instance_buffer_sizes.tempSizeInBytes,
+        ias,
+        instance_buffer_sizes.outputSizeInBytes,
+        &handle,
+        0,
+        0
+    ));
+
+    CUDA_CHECK(cudaStreamSynchronize(0));
+    CUDA_CHECK(cudaFree((void*)d_instance_temp_buffer));
+    CUDA_CHECK(cudaFree((void*)d_instances));
 }
 
 void GaussianTracer::initParams()

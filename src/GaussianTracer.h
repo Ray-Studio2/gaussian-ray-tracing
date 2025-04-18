@@ -56,14 +56,16 @@ public:
 	void createLoadMesh(std::string filename);
 
 private:
+	// Initialize Optix pipeline.
 	void createContext();
-	void buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle);
 	void createModule();
 	void createProgramGroups();
 	void createPipeline();
 	void createSBT();
 
 	void createGaussiansASV1();
+	void buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle);
+
 	void updateParamsTraversableHandle();
 
 	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
@@ -71,6 +73,16 @@ private:
 
 	void sendGeometryAttributesToDevice(Primitive p);
 	void updateGeometryAttributesToDevice(Primitive& p);
+
+	// Optix state
+	OptixDeviceContext		    m_context;
+	OptixModule                 ptx_module;
+	OptixPipelineCompileOptions pipeline_compile_options;
+	OptixProgramGroup           raygen_prog_group;
+	OptixProgramGroup           miss_prog_group;
+	OptixProgramGroup           hit_prog_group;
+	OptixPipeline               pipeline;
+	OptixShaderBindingTable     sbt;
 
 	// Gaussian data
 	GaussianData m_gsData;
@@ -82,18 +94,6 @@ private:
 
 	std::vector<float3>       vertices;
 	std::vector<unsigned int> indices;
-	CUdeviceptr               d_vertices;
-	CUdeviceptr               d_indices;
-
-	// Optix state
-	OptixDeviceContext		    m_context;
-	OptixModule                 ptx_module;
-	OptixPipelineCompileOptions pipeline_compile_options;
-	OptixProgramGroup           raygen_prog_group;
-	OptixProgramGroup           miss_prog_group;
-	OptixProgramGroup           hit_prog_group;
-	OptixPipeline               pipeline;
-	OptixShaderBindingTable     sbt;
 
 	Params* d_params;
 
