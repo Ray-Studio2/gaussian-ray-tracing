@@ -30,11 +30,8 @@ public:
 	GaussianTracer(const std::string& filename);
 	~GaussianTracer();
 
-	void setSize(unsigned int width, unsigned int height);
-	float3 getGaussianCenter() { return m_gsData.getCenter(); }
-
 	void initializeOptix();
-	void initParams();
+
 	void render(CUDAOutputBuffer& output_buffer);
 	
 	void updateCamera(Camera& camera, bool& camera_changed);
@@ -45,6 +42,9 @@ public:
 	void removePrimitive();
 
 	void setReflectionMeshRenderNormal(bool val);
+
+	void setSize(unsigned int width, unsigned int height);
+	float3 getGaussianCenter() { return m_gsData.getCenter(); }
 
 	Params	 params;
 	CUstream stream;
@@ -62,15 +62,18 @@ private:
 	void createProgramGroups();
 	void createPipeline();
 	void createSBT();
+	void initializeParams();
 
-	void createGaussiansASV1();
+	void createGaussianParticlesBVH();
+
+	OptixTraversableHandle createGAS(std::vector<float3> const& vs,
+								     std::vector<unsigned int> const& is);
+	OptixInstance createIAS(OptixTraversableHandle const& gas,
+							glm::mat4 transform,
+							size_t index);
 	void buildAccelationStructure(std::vector<OptixInstance>& instances, OptixTraversableHandle& handle);
 
 	void updateParamsTraversableHandle();
-
-	OptixTraversableHandle createGAS(std::vector<float3> const& vs, std::vector<unsigned int> const& is);
-	OptixInstance createIAS(OptixTraversableHandle const& gas, glm::mat4 transform);
-
 	void sendGeometryAttributesToDevice(Primitive p);
 	void updateGeometryAttributesToDevice(Primitive& p);
 
@@ -84,25 +87,24 @@ private:
 	OptixPipeline               pipeline;
 	OptixShaderBindingTable     sbt;
 
-	// Gaussian data
-	GaussianData m_gsData;
-	size_t		 particle_count;
-	float		 alpha_min;
-	
+	// Geometry
 	OptixTraversableHandle	   gaussian_handle;
 	std::vector<OptixInstance> gaussian_instances;
 
+	std::vector<OptixInstance> mesh_instances;
+	OptixTraversableHandle     mesh_handle;
+	
+	// Gaussian data
+	GaussianData m_gsData;
+	size_t		 particle_count;
+	float		 alpha_min;	
 	std::vector<float3>       vertices;
-	std::vector<unsigned int> indices;
+	std::vector<unsigned int> indices;	
+
+	// Mesh
+	std::vector<Mesh> meshes;
 
 	Params* d_params;
-
-	// Reflection
-	std::vector<OptixInstance> reflection_instances;
-	OptixTraversableHandle     reflection_handle = 0;
-
-	// Reflection meshes
-	std::vector<Mesh> meshes;
 
 	// ETC
 	float3 current_lookat;
