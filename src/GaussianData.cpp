@@ -13,9 +13,8 @@ GaussianData::GaussianData(const std::string& filename)
 
 GaussianData::~GaussianData()
 {
-	if (plydata) {
+	if (plydata)
 		delete plydata;
-	}
 }
 
 void GaussianData::loadPly()
@@ -26,8 +25,8 @@ void GaussianData::loadPly()
 void GaussianData::parse()
 {
 	auto& element = plydata->getElement(plyElementName);
-
-    auto xProps = element.getProperty<float>("x");
+	
+	auto xProps = element.getProperty<float>("x");
     auto yProps = element.getProperty<float>("y");
     auto zProps = element.getProperty<float>("z");
 
@@ -98,18 +97,6 @@ void GaussianData::parse()
     for (size_t i = 0; i < vertexCount; ++i) {
         GaussianParticle p;
 
-  //      p.position = make_float3(xProps[i], yProps[i], zProps[i]);
-		//p.scale = make_float3(expf(scale0Props[i]),
-		//	                  expf(scale1Props[i]),
-		//	                  expf(scale2Props[i]));
-  //      const float norm = std::sqrt(rot0Props[i] * rot0Props[i] +
-  //                                   rot1Props[i] * rot1Props[i] +
-  //                                   rot2Props[i] * rot2Props[i] +
-  //                                   rot3Props[i] * rot3Props[i]);
-  //      p.rotation = make_float4(rot0Props[i] / norm,
-  //                               rot1Props[i] / norm,
-  //                               rot2Props[i] / norm,
-  //                               rot3Props[i] / norm);
 		p.position = glm::vec3(xProps[i], yProps[i], zProps[i]);
 		p.scale = glm::vec3(expf(scale0Props[i]),
 			                expf(scale1Props[i]),
@@ -123,21 +110,16 @@ void GaussianData::parse()
 							   rot2Props[i] / norm,
 							   rot3Props[i] / norm);
         p.opacity = 1.0f / (1.0f + expf(-opacityProps[i]));
-		p.sh[0] = make_float3(f_dc0Props[i], f_dc1Props[i], f_dc2Props[i]);
-		//for (int j = 1; j < 16; ++j)
-  //      {
-		//	//p.sh[j] = make_float3(0.0f, 0.0f, 0.0f);
-
-		//}
-		p.sh[1] = make_float3(f_rest0Props[i], f_rest15Props[i], f_rest30Props[i]);
-		p.sh[2] = make_float3(f_rest1Props[i], f_rest16Props[i], f_rest31Props[i]);
-		p.sh[3] = make_float3(f_rest2Props[i], f_rest17Props[i], f_rest32Props[i]);
-		p.sh[4] = make_float3(f_rest3Props[i], f_rest18Props[i], f_rest33Props[i]);
-		p.sh[5] = make_float3(f_rest4Props[i], f_rest19Props[i], f_rest34Props[i]);
-		p.sh[6] = make_float3(f_rest5Props[i], f_rest20Props[i], f_rest35Props[i]);
-		p.sh[7] = make_float3(f_rest6Props[i], f_rest21Props[i], f_rest36Props[i]);
-		p.sh[8] = make_float3(f_rest7Props[i], f_rest22Props[i], f_rest37Props[i]);
-		p.sh[9] = make_float3(f_rest8Props[i], f_rest23Props[i], f_rest38Props[i]);
+		p.sh[0]  = make_float3(f_dc0Props[i], f_dc1Props[i], f_dc2Props[i]);
+		p.sh[1]  = make_float3(f_rest0Props[i], f_rest15Props[i], f_rest30Props[i]);
+		p.sh[2]  = make_float3(f_rest1Props[i], f_rest16Props[i], f_rest31Props[i]);
+		p.sh[3]  = make_float3(f_rest2Props[i], f_rest17Props[i], f_rest32Props[i]);
+		p.sh[4]  = make_float3(f_rest3Props[i], f_rest18Props[i], f_rest33Props[i]);
+		p.sh[5]  = make_float3(f_rest4Props[i], f_rest19Props[i], f_rest34Props[i]);
+		p.sh[6]  = make_float3(f_rest5Props[i], f_rest20Props[i], f_rest35Props[i]);
+		p.sh[7]  = make_float3(f_rest6Props[i], f_rest21Props[i], f_rest36Props[i]);
+		p.sh[8]  = make_float3(f_rest7Props[i], f_rest22Props[i], f_rest37Props[i]);
+		p.sh[9]  = make_float3(f_rest8Props[i], f_rest23Props[i], f_rest38Props[i]);
 		p.sh[10] = make_float3(f_rest9Props[i], f_rest24Props[i], f_rest39Props[i]);
 		p.sh[11] = make_float3(f_rest10Props[i], f_rest25Props[i], f_rest40Props[i]);
 		p.sh[12] = make_float3(f_rest11Props[i], f_rest26Props[i], f_rest41Props[i]);
