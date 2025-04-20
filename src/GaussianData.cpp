@@ -140,8 +140,7 @@ size_t GaussianData::getVertexCount() const
 float3 GaussianData::getCenter()
 {
     float3 center = make_float3(0.0f, 0.0f, 0.0f);
-    for (auto& p : particles)
-    {
+    for (auto& p : particles) {
         center.x += p.position.x;
         center.y += p.position.y;
         center.z += p.position.z;
