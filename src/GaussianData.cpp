@@ -14,7 +14,7 @@ GaussianData::GaussianData(const std::string& filename)
 GaussianData::~GaussianData()
 {
     if (plydata)
-	    delete plydata;
+        delete plydata;
 }
 
 void GaussianData::loadPly()
@@ -102,9 +102,9 @@ void GaussianData::parse()
                             expf(scale1Props[i]),
                             expf(scale2Props[i]));
         const float norm = sqrtf(rot0Props[i] * rot0Props[i] +
-								 rot1Props[i] * rot1Props[i] +
-								 rot2Props[i] * rot2Props[i] +
-								 rot3Props[i] * rot3Props[i]);
+                                 rot1Props[i] * rot1Props[i] +
+                                 rot2Props[i] * rot2Props[i] +
+                                 rot3Props[i] * rot3Props[i]);
         p.rotation = glm::quat(rot0Props[i] / norm,
                                rot1Props[i] / norm,
                                rot2Props[i] / norm,
