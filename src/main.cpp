@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 
-	std::string filename = ply_flag ? args::get(ply_flag) : "../data/train.ply";
+	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = width_flag ? args::get(width_flag) : 1280;
@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 	Camera camera;
 	gui.setGaussianCenter(tracer.getGaussianCenter());
 	gui.initCamera(&camera);
-	tracer.initParams();
 
 	std::chrono::duration<double> state_update_time(0.0);
 	std::chrono::duration<double> render_time(0.0);
