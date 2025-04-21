@@ -154,7 +154,7 @@ static __forceinline__ __device__ float3 trace(
 		packPointer(&prd, u0, u1);
 
 		optixTrace(
-			params.reflection_handle,
+			params.mesh_handle,
 			ray_origin,
 			ray_direction,
 			t_curr,
