@@ -489,7 +489,7 @@ void GaussianTracer::initializeParams()
     params.alpha_min                 = alpha_min;
     params.sh_degree_max             = 3;
     params.has_reflection_objects    = false;
-    params.reflection_handle         = mesh_handle;
+    params.mesh_handle               = mesh_handle;
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;
 
@@ -577,7 +577,7 @@ void GaussianTracer::removePrimitive()
 
 void GaussianTracer::updateParamsTraversableHandle()
 {
-	params.reflection_handle = mesh_handle;
+	params.mesh_handle = mesh_handle;
 }
 
 void GaussianTracer::setReflectionMeshRenderNormal(bool val)

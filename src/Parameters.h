@@ -85,8 +85,8 @@ struct Params
 	OptixTraversableHandle handle;
 	GaussianParticle* d_particles;
 
-	// Reflection
-	OptixTraversableHandle reflection_handle;
+	// Mesh
+	OptixTraversableHandle mesh_handle;
 	bool has_reflection_objects;
 	bool reflection_render_normals;
 
