@@ -56,7 +56,7 @@ include_directories(third_party/ImGuiFileDialog)
 include_directories(third_party/tinyobjloader)
 
 set(SHADERS
-	${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cu
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/shader.cu
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/vector_math.h
 )
@@ -86,7 +86,6 @@ add_executable(
 	src/GaussianTracer.cpp
 	src/GaussianData.cpp
 	src/Exception.h
-	src/shader.cu
 	src/gui.cpp
 	src/Parameters.h
 	src/Display.h
@@ -98,9 +97,9 @@ add_executable(
 	src/CUDAOutputBuffer.cpp
 	src/Utility.h
 	src/geometry/Icosahedron.h
+	src/geometry/Primitives.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
-	src/geometry/Primitives.cpp
  )
 
 target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
