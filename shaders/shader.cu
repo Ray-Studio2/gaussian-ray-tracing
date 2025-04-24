@@ -149,9 +149,9 @@ static __forceinline__ __device__ float3 trace(
 			0.0f,
 			OptixVisibilityMask(1),
 			OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-			RAY_TYPE_RADIANCE,        // SBT offset
-			RAY_TYPE_COUNT,           // SBT stride
-			RAY_TYPE_RADIANCE,        // missSBTIndex
+			0,        // SBT offset
+			1,        // SBT stride
+			0,        // missSBTIndex
 			u0, u1
 		);
 	}
@@ -176,10 +176,9 @@ static __forceinline__ __device__ float3 trace(
 			0.0f,
 			OptixVisibilityMask(1),
 			OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
-			// rayFlags,
-			RAY_TYPE_RADIANCE,        // SBT offset
-			RAY_TYPE_COUNT,           // SBT stride
-			RAY_TYPE_RADIANCE,        // missSBTIndex
+			0,        // SBT offset
+			1,        // SBT stride
+			0,        // missSBTIndex
 			u0, u1
 		);
 

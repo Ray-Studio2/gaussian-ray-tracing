@@ -23,12 +23,6 @@
 #define SH_C3_5   1.445305721320277f
 #define SH_C3_6  -0.5900435899266435f
 
-enum RayType
-{
-	RAY_TYPE_RADIANCE = 0,
-	RAY_TYPE_COUNT
-};
-
 struct RayGenData { };
 struct MissData   { };
 struct HitData    { };

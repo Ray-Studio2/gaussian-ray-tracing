@@ -294,7 +294,7 @@ void GaussianTracer::createSBT()
     sbt.raygenRecord                = d_raygen_record;
     sbt.missRecordBase              = d_miss_record;
     sbt.missRecordStrideInBytes     = static_cast<uint32_t>(miss_record_size);
-    sbt.missRecordCount             = RAY_TYPE_COUNT;
+    sbt.missRecordCount             = 1;
 	sbt.hitgroupRecordBase          = d_hit_record;
 	sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hit_record_size);
 	sbt.hitgroupRecordCount         = 1;
