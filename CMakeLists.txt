@@ -57,6 +57,7 @@ include_directories(third_party/tinyobjloader)
 
 set(SHADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/shader.cu
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/tracer.cuh
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/vector_math.h
 )
@@ -100,6 +101,8 @@ add_executable(
 	src/geometry/Primitives.cpp
 	${IMGUI}
 	third_party/ImGuiFileDialog/ImGuiFileDialog.cpp
+	shaders/shader.cu
+	shaders/tracer.cuh
  )
 
 target_compile_definitions(gaussian-tracing PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)

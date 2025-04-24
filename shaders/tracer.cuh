@@ -1,0 +1,57 @@
+#pragma once
+
+#include <optix.h>
+
+#include "../src/vector_math.h"
+
+static __forceinline__ __device__ void getRay(const uint3 idx,
+											  const float3 U, 
+											  const float3 V, 
+											  const float3 W, 
+											  const float3 eye,	
+											  const int width,
+											  const int height,		
+											  float3& ray_origin,
+											  float3& ray_direction)
+{
+	// TODO: Check jitter
+	const float2 subpixel_jitter = make_float2(0.5f, 0.5f);
+	const float2 d = 2.0f * make_float2(
+		(static_cast<float>(idx.x) + subpixel_jitter.x) / static_cast<float>(width),
+		(static_cast<float>(idx.y) + subpixel_jitter.y) / static_cast<float>(height)
+	) - 1.0f;
+
+	ray_origin    = eye;
+	ray_direction = normalize(d.x * U + d.y * V + W);
+}
+
+static __forceinline__ __device__ void getFishEyeRay(const uint3 idx,
+			  										 const float3 U,
+													 const float3 V,
+													 const float3 W,
+													 const float3 eye,
+													 const int width,
+													 const int height,
+													 float3& ray_origin,
+													 float3& ray_direction)
+{
+	// TODO: Check jitter
+	const float2 subpixel_jitter = make_float2(0.5f, 0.5f);
+	const float2 d = 2.0f * make_float2(
+		(static_cast<float>(idx.x) + subpixel_jitter.x) / static_cast<float>(width),
+		(static_cast<float>(idx.y) + subpixel_jitter.y) / static_cast<float>(height)
+	) - 1.0f;
+
+	float r = sqrtf(d.x * d.x + d.y * d.y);
+
+	if (r > 1.0f) return;
+
+	const float maxTheta = M_PI / 2.0f;
+	float f     = 1.0f / sqrtf(2.0f);
+	float theta = 2.0f * asinf(r / (2.0f * f));
+	float phi   = atan2f(d.y, d.x);
+	float3 direction = make_float3(sinf(theta) * cosf(phi), sinf(theta) * sinf(phi), cosf(theta));
+
+	ray_origin    = eye;
+	ray_direction = normalize(direction.x * U + direction.y * V + direction.z * W);
+}

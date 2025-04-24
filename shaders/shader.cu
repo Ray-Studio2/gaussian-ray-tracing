@@ -4,8 +4,9 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/quaternion.hpp>
 
-#include "Parameters.h"
-#include "vector_math.h"
+#include "tracer.cuh"
+#include "../src/Parameters.h"
+#include "../src/vector_math.h"
 
 extern "C"
 {
@@ -234,50 +235,30 @@ static __forceinline__ __device__ float3 trace(
 
 extern "C" __global__ void __raygen__raygeneration()
 {
-	const int    w = params.width;
-	const int    h = params.height;
-	const float3 eye = params.eye;
-	const float3 U = -params.U;
-	const float3 V = -params.V;
-	const float3 W = params.W;
+	float3 ray_origin, ray_direction;
 
-	const uint3  idx = optixGetLaunchIndex();
-
-	const float2 subpixel_jitter = make_float2(0.5f, 0.5f);
-	const float2 d = 2.0f * make_float2(
-		(static_cast<float>(idx.x) + subpixel_jitter.x) / static_cast<float>(w),
-		(static_cast<float>(idx.y) + subpixel_jitter.y) / static_cast<float>(h)
-	) - 1.0f;
-
-	float3 ray_direction;
-	if (params.mode_fisheye) {
-		float r = sqrtf(d.x * d.x + d.y * d.y);
-
-		if (r > 1.0f) {
-			return;
-		}
-
-		const float maxTheta = M_PI / 2.0f;
-		float f = 1.0f / sqrtf(2.0f);
-		float theta = 2.0f * asinf(r / (2.0f * f));
-
-		float phi = atan2f(d.y, d.x);
-
-		float3 ray_direction_cam = make_float3(
-			sinf(theta) * cosf(phi),
-			sinf(theta) * sinf(phi),
-			cosf(theta)
-		);
-
-		ray_direction = normalize(ray_direction_cam.x * U +
-								  ray_direction_cam.y * V +
-							      ray_direction_cam.z * W);
+	if (!params.mode_fisheye) {
+		getRay(optixGetLaunchIndex(),
+			   -params.U,
+			   -params.V,
+			   params.W,
+			   params.eye,
+			   params.width,
+			   params.height,
+			   ray_origin,
+			   ray_direction);
 	}
 	else {
-		ray_direction = normalize(d.x * U + d.y * V + W);
+		getFishEyeRay(optixGetLaunchIndex(),
+					  -params.U,
+					  -params.V,
+					  params.W,
+					  params.eye,
+					  params.width,
+					  params.height,
+					  ray_origin,
+					  ray_direction);
 	}
-
-	float3 ray_origin = eye;
 
 	float3 result = make_float3(0.0f);
 
