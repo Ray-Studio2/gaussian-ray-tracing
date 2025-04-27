@@ -87,6 +87,8 @@ struct Params
 	bool mode_fisheye;
 
 	Mesh* d_meshes;
+
+    int32_t type;
 };
 
 struct RayPayload
@@ -102,3 +104,8 @@ struct RayPayload
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
 typedef Record<HitData>    HitRecord;
+
+enum MeshType
+{
+    MIRROR = 0,
+};

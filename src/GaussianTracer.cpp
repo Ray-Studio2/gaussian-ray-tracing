@@ -492,6 +492,8 @@ void GaussianTracer::initializeParams()
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;
 
+    params.type = MIRROR;
+
     {
         CUdeviceptr d_particles;
         const size_t particles_size = sizeof(GaussianParticle) * particle_count;
