@@ -133,7 +133,6 @@ static __forceinline__ __device__ float3 trace(
 
 	float T_max = params.t_max;
 
-	if (params.has_reflection_objects)
 	{
 		uint32_t u0, u1;
 		packPointer(&prd, u0, u1);

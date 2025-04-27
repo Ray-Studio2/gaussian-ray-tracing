@@ -81,7 +81,6 @@ struct Params
 
 	// Mesh
 	OptixTraversableHandle mesh_handle;
-	bool has_reflection_objects;
 	bool reflection_render_normals;
 
 	// FishEye

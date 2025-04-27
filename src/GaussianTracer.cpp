@@ -488,7 +488,6 @@ void GaussianTracer::initializeParams()
     params.T_min                     = 0.03f;
     params.alpha_min                 = alpha_min;
     params.sh_degree_max             = 3;
-    params.has_reflection_objects    = false;
     params.mesh_handle               = mesh_handle;
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;
@@ -572,7 +571,6 @@ void GaussianTracer::removePrimitive()
     primitives->clearPrimitives();
     mesh_handle = 0;
     updateParamsTraversableHandle();
-    params.has_reflection_objects = false;
 }
 
 void GaussianTracer::updateParamsTraversableHandle()
@@ -608,8 +606,6 @@ void GaussianTracer::createPlane()
     updateParamsTraversableHandle();   
 
 	sendGeometryAttributesToDevice(p);
-    
-    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::createSphere()
@@ -635,8 +631,6 @@ void GaussianTracer::createSphere()
     updateParamsTraversableHandle();
 
     sendGeometryAttributesToDevice(p);
-
-	params.has_reflection_objects = true;
 }
 
 void GaussianTracer::createLoadMesh(std::string filename)
@@ -662,8 +656,6 @@ void GaussianTracer::createLoadMesh(std::string filename)
     updateParamsTraversableHandle();
 
     sendGeometryAttributesToDevice(p);
-
-    params.has_reflection_objects = true;
 }
 
 void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
