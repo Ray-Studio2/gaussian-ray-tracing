@@ -5,6 +5,11 @@
 #include "../src/Parameters.h"
 #include "../src/vector_math.h"
 
+extern "C"
+{
+	__constant__ Params params;
+}
+
 static __forceinline__ __device__ void packPointer(void* ptr, uint32_t& u0, uint32_t& u1)
 {
 	const uint64_t uptr = reinterpret_cast<uint64_t>(ptr);

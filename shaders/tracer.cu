@@ -6,10 +6,10 @@
 
 #include "tracer.cuh"
 
-extern "C"
-{
-	__constant__ Params params;
-}
+//extern "C"
+//{
+//	__constant__ Params params;
+//}
 
 template<typename T>
 static __forceinline__ __device__ T* getPRD()
@@ -112,6 +112,27 @@ static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, f
 {
 	float3 L = SHToRadiance(gp, d);
 	return make_float3(fmaxf(L.x, 0.0f), fmaxf(L.y, 0.0f), fmaxf(L.z, 0.0f));
+}
+
+static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_direction, RayPayload& prd)
+{
+	uint32_t u0, u1;
+	packPointer(&prd, u0, u1);
+
+	optixTrace(
+		params.mesh_handle,
+		ray_origin,
+		ray_direction,
+		1e-5,
+		1e5,
+		0.0f,
+		OptixVisibilityMask(1),
+		OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+		0,        // SBT offset
+		1,        // SBT stride
+		0,        // missSBTIndex
+		u0, u1
+	);
 }
 
 static __forceinline__ __device__ float3 trace(
@@ -245,7 +266,10 @@ extern "C" __global__ void __raygen__raygeneration()
 	RayPayload prd;
 	const int MAX_RECURSION = 5;
 	int recursion_count = 0;
-	result = trace(params.handle, ray_origin, ray_direction, prd);
+	//result = trace(params.handle, ray_origin, ray_direction, prd);
+
+	//traceMesh(ray_origin, ray_direction, prd);
+
 	while (recursion_count < MAX_RECURSION) {
 		result = trace(params.handle, ray_origin, ray_direction, prd);
 		if (!prd.hit_reflection_primitive) {
@@ -309,12 +333,16 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
+	//RayPayload* prd = getPRD<RayPayload>();
 	RayPayload& prd = *getPRD<RayPayload>();
 
 	float hit_t = optixGetRayTmax();
 	float3 ray_o = optixGetWorldRayOrigin();
 	float3 ray_d = optixGetWorldRayDirection();
 
+	//prd->hit_count++;
+	//prd->hit_reflection_primitive = true;
+	//prd->t_hit_reflection = hit_t;
 	prd.hit_count++;
 	prd.hit_reflection_primitive = true;
 	prd.t_hit_reflection = hit_t;
