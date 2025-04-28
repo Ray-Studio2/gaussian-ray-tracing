@@ -2,6 +2,7 @@
 
 #include <optix.h>
 
+#include "../src/Parameters.h"
 #include "../src/vector_math.h"
 
 static __forceinline__ __device__ void packPointer(void* ptr, uint32_t& u0, uint32_t& u1)
@@ -68,4 +69,24 @@ static __forceinline__ __device__ void getFishEyeRay(const uint3 idx,
 
 	ray_origin    = eye;
 	ray_direction = normalize(direction.x * U + direction.y * V + direction.z * W);
+}
+
+static __forceinline__ __device__ float3 getBarycentricNormal(Mesh mesh)
+{
+	unsigned int primitive_index = optixGetPrimitiveIndex();
+
+	uint3 face = mesh.faces[primitive_index];
+
+	float3 n0 = mesh.vertex_normals[face.x];
+	float3 n1 = mesh.vertex_normals[face.y];
+	float3 n2 = mesh.vertex_normals[face.z];
+
+	float2 barycentrics = optixGetTriangleBarycentrics();
+
+	float w0 = 1.0f - barycentrics.x - barycentrics.y;
+	float w1 = barycentrics.x;
+	float w2 = barycentrics.y;
+
+	float3 normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
+	return normal;
 }

@@ -5,8 +5,6 @@
 #include <gtc/quaternion.hpp>
 
 #include "tracer.cuh"
-#include "../src/Parameters.h"
-#include "../src/vector_math.h"
 
 extern "C"
 {
@@ -321,26 +319,11 @@ extern "C" __global__ void __closesthit__closesthit()
 	prd.hit_reflection_primitive = true;
 	prd.t_hit_reflection = hit_t;
 
-	unsigned int mesh_index = optixGetInstanceId();
-	Mesh mesh = params.d_meshes[mesh_index];
-	
-	unsigned int primitive_index = optixGetPrimitiveIndex();
-
-	uint3 face = mesh.faces[primitive_index];
-
-	float3 n0 = mesh.vertex_normals[face.x];
-	float3 n1 = mesh.vertex_normals[face.y];
-	float3 n2 = mesh.vertex_normals[face.z];
-
-	float2 barycentrics = optixGetTriangleBarycentrics();
-
-	float w0 = 1.0f - barycentrics.x - barycentrics.y;
-	float w1 = barycentrics.x;
-	float w2 = barycentrics.y;
-
 	float3 hit_position = ray_d * hit_t + ray_o;
-	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 
-	prd.hit_normal = hit_normal;
+	Mesh curr_mesh = params.d_meshes[optixGetInstanceId()];
+	float3 hit_normal = getBarycentricNormal(curr_mesh);
+
+	prd.hit_normal   = hit_normal;
 	prd.hit_position = hit_position;
 }
