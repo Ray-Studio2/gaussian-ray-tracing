@@ -57,10 +57,10 @@ GaussianTracer::~GaussianTracer()
     if (params.d_meshes) CUDA_CHECK(cudaFree((void*)params.d_meshes));
     if (d_params) CUDA_CHECK(cudaFree((void*)d_params));
 
-    for (auto& mesh : meshes) {
-        if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
-        if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
-    }
+    //for (auto& mesh : meshes) {
+    //    if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
+    //    if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
+    //}
 
     if (pipeline) OPTIX_CHECK(optixPipelineDestroy(pipeline));
     if (raygen_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(raygen_prog_group));
@@ -126,7 +126,7 @@ void GaussianTracer::createModule()
 
     pipeline_compile_options.pipelineLaunchParamsVariableName = "params";
 
-	std::vector<char> ptx_code = readData("gaussian-tracing_generated_shader.cu.ptx");
+	std::vector<char> ptx_code = readData("gaussian-tracing_generated_tracer.cu.ptx");
 
     OPTIX_CHECK_LOG(optixModuleCreate(
         m_context,
@@ -559,10 +559,10 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 void GaussianTracer::removePrimitive()
 {
     mesh_instances.clear();
-    for (auto& mesh : meshes) {
-        if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
-        if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
-    }
+    //for (auto& mesh : meshes) {
+    //    if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
+    //    if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
+    //}
     meshes.clear();
 
     if (params.d_meshes) {
@@ -663,52 +663,45 @@ void GaussianTracer::createLoadMesh(std::string filename)
 void GaussianTracer::sendGeometryAttributesToDevice(Primitive p)
 {
     size_t vertex_count = p.vertex_count;
-    Vertex* _vertices = new Vertex[vertex_count];
+    float3* vertex_normals = new float3[vertex_count];
+    std::vector<uint3> faces;
     for (int i = 0; i < vertex_count; i++) {
-        Vertex v;
-        glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
-        glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
-
         glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
         glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
 
-        v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
-        v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
-
-        _vertices[i] = v;
+        vertex_normals[i] = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
     }
-
-    CUdeviceptr _d_vertices;
-    const size_t vertices_size = sizeof(Vertex) * vertex_count;
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
-    CUDA_CHECK(cudaMemcpy(
-        reinterpret_cast<void*>(_d_vertices),
-        _vertices,
-        vertices_size,
-        cudaMemcpyHostToDevice
-    ));
-
-    CUdeviceptr d_face_indices;
-    const size_t indices_size = (p.indices.size() / 3) * sizeof(uint3);
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
-    std::vector<uint3> face_indices;
     for (size_t i = 0; i < p.indices.size(); i += 3) {
-        face_indices.push_back(make_uint3(
+        faces.push_back(make_uint3(
             p.indices[i],
             p.indices[i + 1],
             p.indices[i + 2]
         ));
     }
+
+    CUdeviceptr _d_vertices;
+    const size_t vertices_size = sizeof(float3) * vertex_count;
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(_d_vertices),
+        vertex_normals,
+        vertices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    CUdeviceptr d_face_indices;
+	const size_t indices_size = sizeof(uint3) * (p.indices.size() / 3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
     CUDA_CHECK(cudaMemcpy(
         reinterpret_cast<void*>(d_face_indices),
-        face_indices.data(),
+        faces.data(),
         indices_size,
         cudaMemcpyHostToDevice
     ));
 
 	Mesh mesh;
-	mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
-	mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+    mesh.faces = reinterpret_cast<uint3*>(d_face_indices);
+	mesh.vertex_normals = reinterpret_cast<float3*>(_d_vertices);
 
 	meshes.push_back(mesh);
 
@@ -755,52 +748,45 @@ void GaussianTracer::updateInstanceTransforms(Primitive& p)
 void GaussianTracer::updateGeometryAttributesToDevice(Primitive& p)
 {
     size_t vertex_count = p.vertex_count;
-    Vertex* _vertices = new Vertex[vertex_count];
+	float3* vertex_normals = new float3[vertex_count];
+    std::vector<uint3> faces;
     for (int i = 0; i < vertex_count; i++) {
-        Vertex v;
-		glm::vec3 glm_position = glm::vec3(p.vertices[i].x, p.vertices[i].y, p.vertices[i].z);
-		glm::vec4 glm_transformed_position = p.transform * glm::vec4(glm_position, 1.0f);
-
 		glm::vec3 glm_normal = glm::vec3(p.normals[i].x, p.normals[i].y, p.normals[i].z);
 		glm::vec3 glm_transformed_normal = glm::mat3(p.transform) * glm_normal;
 
-		v.position = make_float3(glm_transformed_position.x, glm_transformed_position.y, glm_transformed_position.z);
-		v.normal = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
-
-        _vertices[i] = v;
+        vertex_normals[i] = make_float3(glm_transformed_normal.x, glm_transformed_normal.y, glm_transformed_normal.z);
     }
-
-    CUdeviceptr _d_vertices;
-    const size_t vertices_size = sizeof(Vertex) * vertex_count;
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
-    CUDA_CHECK(cudaMemcpy(
-        reinterpret_cast<void*>(_d_vertices),
-        _vertices,
-        vertices_size,
-        cudaMemcpyHostToDevice
-    ));
-
-    CUdeviceptr d_face_indices;
-    const size_t indices_size = (p.indices.size() / 3) * sizeof(uint3);
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
-    std::vector<uint3> face_indices;
     for (size_t i = 0; i < p.indices.size(); i += 3) {
-        face_indices.push_back(make_uint3(
+        faces.push_back(make_uint3(
             p.indices[i],
             p.indices[i + 1],
             p.indices[i + 2]
         ));
     }
+
+    CUdeviceptr _d_vertices;
+    const size_t vertices_size = sizeof(float3) * vertex_count;
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&_d_vertices), vertices_size));
+    CUDA_CHECK(cudaMemcpy(
+        reinterpret_cast<void*>(_d_vertices),
+        vertex_normals,
+        vertices_size,
+        cudaMemcpyHostToDevice
+    ));
+
+    CUdeviceptr d_face_indices;
+    const size_t indices_size = sizeof(uint3) * (p.indices.size() / 3);
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_face_indices), indices_size));
     CUDA_CHECK(cudaMemcpy(
         reinterpret_cast<void*>(d_face_indices),
-        face_indices.data(),
+        faces.data(),
         indices_size,
         cudaMemcpyHostToDevice
     ));
 
     Mesh mesh;
-    mesh.vertices = reinterpret_cast<Vertex*>(_d_vertices);
-    mesh.faces = reinterpret_cast<Face*>(d_face_indices);
+    mesh.faces = reinterpret_cast<uint3*>(d_face_indices);
+    mesh.vertex_normals = reinterpret_cast<float3*>(_d_vertices);
 
 	meshes[p.instanceIndex] = mesh;
 

@@ -255,16 +255,17 @@ extern "C" __global__ void __raygen__raygeneration()
 		}
 
 		if (params.reflection_render_normals) {
-			result = (prd.reflection_vertex.normal + 1) / 2;
+			//result = (prd.reflection_vertex.normal + 1) / 2;
+			result = (prd.hit_normal + 1) / 2;
 			break;
 		}
 
-		const Vertex hit_point = prd.reflection_vertex;
-		if (length(hit_point.position - ray_origin) < 1e-6){
+		if (length(prd.hit_position - ray_origin) < 1e-6){
 			break;
 		}
-		ray_origin = hit_point.position;
-		ray_direction = reflect(ray_direction, hit_point.normal);
+
+		ray_origin = prd.hit_position;
+		ray_direction = reflect(ray_direction, prd.hit_normal);
 		recursion_count++;
 	}
 	
@@ -312,27 +313,24 @@ extern "C" __global__ void __closesthit__closesthit()
 {
 	RayPayload& prd = *getPRD<RayPayload>();
 
+	float hit_t = optixGetRayTmax();
+	float3 ray_o = optixGetWorldRayOrigin();
+	float3 ray_d = optixGetWorldRayDirection();
+
 	prd.hit_count++;
 	prd.hit_reflection_primitive = true;
-	prd.t_hit_reflection = optixGetRayTmax();
+	prd.t_hit_reflection = hit_t;
 
 	unsigned int mesh_index = optixGetInstanceId();
 	Mesh mesh = params.d_meshes[mesh_index];
 	
 	unsigned int primitive_index = optixGetPrimitiveIndex();
 
-	Face face = mesh.faces[primitive_index];
-	Vertex v0 = mesh.vertices[face.indices.x];
-	Vertex v1 = mesh.vertices[face.indices.y];
-	Vertex v2 = mesh.vertices[face.indices.z];
+	uint3 face = mesh.faces[primitive_index];
 
-	float3 p0 = v0.position;
-	float3 p1 = v1.position;
-	float3 p2 = v2.position;
-
-	float3 n0 = v0.normal;
-	float3 n1 = v1.normal;
-	float3 n2 = v2.normal;
+	float3 n0 = mesh.vertex_normals[face.x];
+	float3 n1 = mesh.vertex_normals[face.y];
+	float3 n2 = mesh.vertex_normals[face.z];
 
 	float2 barycentrics = optixGetTriangleBarycentrics();
 
@@ -340,9 +338,9 @@ extern "C" __global__ void __closesthit__closesthit()
 	float w1 = barycentrics.x;
 	float w2 = barycentrics.y;
 
-	float3 hit_position = w0 * p0 + w1 * p1 + w2 * p2;
+	float3 hit_position = ray_d * hit_t + ray_o;
 	float3 hit_normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 
-	prd.reflection_vertex.position = hit_position;
-	prd.reflection_vertex.normal = hit_normal;
+	prd.hit_normal = hit_normal;
+	prd.hit_position = hit_position;
 }

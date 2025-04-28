@@ -40,21 +40,10 @@ struct HitInfo
 	int particleIndex;
 };
 
-struct Vertex
-{
-	float3 position;
-	float3 normal;
-};
-
-struct Face
-{
-	uint3 indices;
-};
-
 struct Mesh
 {
-	Vertex* vertices;
-	Face*   faces;
+	uint3*  faces;
+	float3* vertex_normals;
 };
 
 struct Params
@@ -98,7 +87,12 @@ struct RayPayload
 
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
-	Vertex reflection_vertex;
+
+	float3 ray_origin;
+	float3 ray_direction;
+
+	float3 hit_normal;
+	float3 hit_position;
 };
 
 typedef Record<RayGenData> RayGenRecord;
