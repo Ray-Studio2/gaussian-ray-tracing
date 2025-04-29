@@ -6,18 +6,7 @@
 
 #include "tracer.cuh"
 
-//extern "C"
-//{
-//	__constant__ Params params;
-//}
-
-template<typename T>
-static __forceinline__ __device__ T* getPRD()
-{
-	const uint32_t u0 = optixGetPayload_0();
-	const uint32_t u1 = optixGetPayload_1();
-	return reinterpret_cast<T*>(unpackPointer(u0, u1));
-}
+constexpr uint32_t MAX_BOUNCES = 5;
 
 static __forceinline__ __device__ void swap(HitInfo& a, HitInfo& b)
 {
@@ -114,32 +103,11 @@ static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, f
 	return make_float3(fmaxf(L.x, 0.0f), fmaxf(L.y, 0.0f), fmaxf(L.z, 0.0f));
 }
 
-static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_direction, RayPayload& prd)
-{
-	uint32_t u0, u1;
-	packPointer(&prd, u0, u1);
-
-	optixTrace(
-		params.mesh_handle,
-		ray_origin,
-		ray_direction,
-		1e-5,
-		1e5,
-		0.0f,
-		OptixVisibilityMask(1),
-		OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-		0,        // SBT offset
-		1,        // SBT stride
-		0,        // missSBTIndex
-		u0, u1
-	);
-}
-
 static __forceinline__ __device__ float3 trace(
 	OptixTraversableHandle handle,
 	const float3 ray_origin,
 	const float3 ray_direction,
-	RayPayload& prd
+	RayPayload* prd
 )
 {
     float3 L = make_float3(0.0f);
@@ -147,41 +115,24 @@ static __forceinline__ __device__ float3 trace(
     float  t_curr = params.t_min;
     const  float epsilon = 1e-4f;
 
-    prd.hit_count = 0;
-	prd.hit_reflection_primitive = false;
+	prd->hit_count = 0;
+	prd->hit_reflection_primitive = false;
 
-	float T_max = params.t_max;
+	traceMesh(ray_origin, ray_direction, prd);
 
-	{
-		uint32_t u0, u1;
-		packPointer(&prd, u0, u1);
+	while (params.minTransmittance < T && t_curr < params.t_max) {
+		//for (int i = 0; i < params.k; i++) {
+		//	prd->k_closest[i].t = params.t_max;
+		//	prd->k_closest[i].particleIndex = -1;
+		//}
 
-		optixTrace(
-			params.mesh_handle,
-			ray_origin,
-			ray_direction,
-			t_curr,
-			params.t_max,
-			0.0f,
-			OptixVisibilityMask(1),
-			OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-			0,        // SBT offset
-			1,        // SBT stride
-			0,        // missSBTIndex
-			u0, u1
-		);
-	}
 
-	while (params.T_min < T && t_curr < params.t_max)
-	{
-		for (int i = 0; i < params.k; i++)
-		{
-			prd.k_closest[i].t = params.t_max;
-			prd.k_closest[i].particleIndex = -1;
-		}
+		//uint32_t u0, u1;
+		//packPointer(prd, u0, u1);
 
-		uint32_t u0, u1;
-		packPointer(&prd, u0, u1);
+		uint32_t r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13;
+		r0 = r2 = r4 = r6 = r8 = r10 = r12 = -1;
+		r1 = r3 = r5 = r7 = r9 = r11 = r13 = __float_as_int(RayHit::InfiniteDistance);
 
 		optixTrace(
 			handle,
@@ -198,17 +149,18 @@ static __forceinline__ __device__ float3 trace(
 			u0, u1
 		);
 
-		t_curr = prd.k_closest[params.k - 1].t + epsilon;
+		t_curr = prd->k_closest[params.k - 1].t + epsilon;
 
+#pragma unroll
 		for (int i = 0; i < params.k; i++)
 		{
-			if (prd.k_closest[i].particleIndex == -1)
+			if (prd->k_closest[i].particleIndex == -1)
 			{
 				t_curr = params.t_max;
 				break;
 			}
 
-			GaussianParticle gp = params.d_particles[prd.k_closest[i].particleIndex];
+			GaussianParticle gp = params.d_particles[prd->k_closest[i].particleIndex];
 
 			float alpha_hit = computeResponse(gp, ray_origin, ray_direction);
 			alpha_hit = fminf(0.99f, alpha_hit * gp.opacity);
@@ -224,11 +176,11 @@ static __forceinline__ __device__ float3 trace(
 		}
 	}
 
-	if (prd.hit_reflection_primitive) {
-		if (prd.t_hit_reflection < t_curr)
+	if (prd->hit_reflection_primitive) {
+		if (prd->t_hit_reflection < t_curr)
 			return make_float3(0.0f, 0.0f, 0.0f);
 		else
-			prd.hit_reflection_primitive = false;
+			prd->hit_reflection_primitive = false;
 	}
 
 	return make_float3(L.x, L.y, L.z);
@@ -264,20 +216,16 @@ extern "C" __global__ void __raygen__raygeneration()
 	float3 result = make_float3(0.0f);
 
 	RayPayload prd;
-	const int MAX_RECURSION = 5;
 	int recursion_count = 0;
-	//result = trace(params.handle, ray_origin, ray_direction, prd);
+	result = trace(params.handle, ray_origin, ray_direction, &prd);
 
-	//traceMesh(ray_origin, ray_direction, prd);
-
-	while (recursion_count < MAX_RECURSION) {
-		result = trace(params.handle, ray_origin, ray_direction, prd);
+	while (recursion_count < MAX_BOUNCES) {
+		result = trace(params.handle, ray_origin, ray_direction, &prd);
 		if (!prd.hit_reflection_primitive) {
 			break;
 		}
 
 		if (params.reflection_render_normals) {
-			//result = (prd.reflection_vertex.normal + 1) / 2;
 			result = (prd.hit_normal + 1) / 2;
 			break;
 		}
@@ -311,19 +259,19 @@ extern "C" __global__ void __miss__miss()
 
 extern "C" __global__ void __anyhit__anyhit()
 {
-	RayPayload& prd = *getPRD<RayPayload>();
+	RayPayload* prd = getRayPayLoad();
 
-	prd.hit_count++;
+	prd->hit_count++;
 
 	unsigned int particle_index = optixGetInstanceId();
 
 	HitInfo hit_info = { optixGetRayTmax(), particle_index };
 	for (int i = 0; i < params.k; i++) {
-		if (hit_info.t < prd.k_closest[i].t)
-			swap(hit_info, prd.k_closest[i]);
+		if (hit_info.t < prd->k_closest[i].t)
+			swap(hit_info, prd->k_closest[i]);
 	}
 
-	if (optixGetRayTmax() < prd.k_closest[params.k - 1].t) {
+	if (optixGetRayTmax() < prd->k_closest[params.k - 1].t) {
 		optixIgnoreIntersection();
 	}
 	else {
@@ -333,25 +281,19 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
-	//RayPayload* prd = getPRD<RayPayload>();
-	RayPayload& prd = *getPRD<RayPayload>();
+	RayPayload* prd = getRayPayLoad();
 
 	float hit_t = optixGetRayTmax();
 	float3 ray_o = optixGetWorldRayOrigin();
 	float3 ray_d = optixGetWorldRayDirection();
 
-	//prd->hit_count++;
-	//prd->hit_reflection_primitive = true;
-	//prd->t_hit_reflection = hit_t;
-	prd.hit_count++;
-	prd.hit_reflection_primitive = true;
-	prd.t_hit_reflection = hit_t;
+	prd->hit_count++;
+	prd->hit_reflection_primitive = true;
+	prd->t_hit_reflection = hit_t;
 
-	float3 hit_position = ray_d * hit_t + ray_o;
+	Mesh hitMesh = params.d_meshes[optixGetInstanceId()];
+	float3 hit_normal = getBarycentricNormal(hitMesh);
 
-	Mesh curr_mesh = params.d_meshes[optixGetInstanceId()];
-	float3 hit_normal = getBarycentricNormal(curr_mesh);
-
-	prd.hit_normal   = hit_normal;
-	prd.hit_position = hit_position;
+	prd->hit_normal = hit_normal;
+	prd->hit_position = ray_d * hit_t + ray_o;
 }

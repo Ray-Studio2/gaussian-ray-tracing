@@ -5,6 +5,10 @@
 #include "../src/Parameters.h"
 #include "../src/vector_math.h"
 
+// Reference: 3DGRUT (https://github.com/nv-tlabs/3dgrut)
+constexpr float TRACE_MESH_TMIN = 1e-5;
+constexpr float TRACE_MESH_TMAX = 1e5;
+
 extern "C"
 {
 	__constant__ Params params;
@@ -22,6 +26,13 @@ static __forceinline__ __device__ void* unpackPointer(uint32_t i0, uint32_t i1)
 	const uint64_t uptr = static_cast<uint64_t>(i0) << 32 | i1;
 	void* ptr = reinterpret_cast<void*>(uptr);
 	return ptr;
+}
+
+static __forceinline__ __device__ RayPayload* getRayPayLoad()
+{
+	const uint32_t u0 = optixGetPayload_0();
+	const uint32_t u1 = optixGetPayload_1();
+	return reinterpret_cast<RayPayload*>(unpackPointer(u0, u1));
 }
 
 static __forceinline__ __device__ void getRay(const uint3 idx,
@@ -94,4 +105,30 @@ static __forceinline__ __device__ float3 getBarycentricNormal(Mesh mesh)
 
 	float3 normal = normalize(w0 * n0 + w1 * n1 + w2 * n2);
 	return normal;
+}
+
+static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_direction, RayPayload* prd)
+{
+	uint32_t u0, u1;
+	packPointer(prd, u0, u1);
+
+	optixTrace(
+		params.mesh_handle,
+		ray_origin,
+		ray_direction,
+		TRACE_MESH_TMIN,
+		TRACE_MESH_TMAX,
+		0.0f,
+		OptixVisibilityMask(1),
+		OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+		0,        // SBT offset
+		1,        // SBT stride
+		0,        // missSBTIndex
+		u0, u1
+	);
+}
+
+static __forceinline__ __device__ void renderMirror()
+{
+
 }

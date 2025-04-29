@@ -62,7 +62,7 @@ struct Params
 
 	float t_min;
 	float t_max;
-	float T_min;
+	float minTransmittance;
 	float alpha_min;
 
 	OptixTraversableHandle handle;
@@ -88,11 +88,11 @@ struct RayPayload
 	bool hit_reflection_primitive;
 	float t_hit_reflection;
 
-	float3 ray_origin;
-	float3 ray_direction;
-
 	float3 hit_normal;
 	float3 hit_position;
+
+	float3 currRayOrigin;
+	float3 currRayDirection;
 };
 
 typedef Record<RayGenData> RayGenRecord;

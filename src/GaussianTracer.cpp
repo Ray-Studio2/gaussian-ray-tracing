@@ -485,7 +485,7 @@ void GaussianTracer::initializeParams()
     params.k                         = MAX_K;
     params.t_min                     = 1e-3f;
     params.t_max                     = 1e5f;
-    params.T_min                     = 0.03f;
+    params.minTransmittance          = 0.03f;
     params.alpha_min                 = alpha_min;
     params.sh_degree_max             = 3;
     params.mesh_handle               = mesh_handle;

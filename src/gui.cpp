@@ -299,7 +299,7 @@ void GUI::renderPanel()
 
 		ImGui::SliderInt("Hit array size", &m_tracer->params.k, 1, 6);
 		ImGui::SliderFloat("Alpha min", &m_tracer->params.alpha_min, 0.01f, 0.2f);
-		ImGui::SliderFloat("T min", &m_tracer->params.T_min, 0.03f, 0.99f);
+		ImGui::SliderFloat("T min", &m_tracer->params.minTransmittance, 0.03f, 0.99f);
 
         ImGui::PopItemWidth();
 	}
