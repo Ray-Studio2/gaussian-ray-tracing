@@ -7,7 +7,7 @@
 #include "GaussianData.h"
 #include "geometry/Primitives.h"
 
-#define MAX_K 6
+#define MAX_K 7
 #define SH_C0     0.28209479177387814f
 #define SH_C1     0.4886025119029199f
 #define SH_C2_0   1.0925484305920792f
@@ -82,17 +82,20 @@ struct Params
 
 struct RayPayload
 {
-	HitInfo      k_closest[MAX_K + 1];
-	unsigned int hit_count;
+	//HitInfo      k_closest[MAX_K + 1];
+	//unsigned int hit_count;
 
-	bool hit_reflection_primitive;
-	float t_hit_reflection;
+	//bool hit_reflection_primitive;
+	//float t_hit_reflection;
 
-	float3 hit_normal;
-	float3 hit_position;
+	//float3 hit_normal;
+	//float3 hit_position;
 
-	float3 currRayOrigin;
-	float3 currRayDirection;
+	float        t_hit;
+	float3       currRayOrigin;
+	float3       currRayDirection;
+	float3       hitNormal;
+	unsigned int numBounces;
 };
 
 typedef Record<RayGenData> RayGenRecord;

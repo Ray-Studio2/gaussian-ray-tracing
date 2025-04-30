@@ -128,7 +128,20 @@ static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_d
 	);
 }
 
-static __forceinline__ __device__ void renderMirror()
+static __forceinline__ __device__ float4 traceGaussians(const float3& ray_o,
+														const float3& ray_d,
+														const float t_min,
+														const float t_max)
 {
 
+}
+
+static __forceinline__ __device__ void renderMirror(const float3 ray_d,
+													float3 normal,
+													float3& newRayDirction,	
+													unsigned int& numBounces)
+{
+	// TODO: safe normalize, check 3DGRUT reflected normal.
+	newRayDirction = reflect(ray_d, normal);
+	numBounces += 1;
 }
