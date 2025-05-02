@@ -8,11 +8,19 @@
 
 constexpr uint32_t MAX_BOUNCES = 32;
 
-static __forceinline__ __device__ void swap(HitInfo& a, HitInfo& b)
+//static __forceinline__ __device__ void swap(HitInfo& a, HitInfo& b)
+//{
+//	HitInfo temp = a;
+//	a = b;
+//	b = temp;
+//}
+
+extern "C"
 {
-	HitInfo temp = a;
-	a = b;
-	b = temp;
+	#ifndef __PARAMS__
+		__constant__ Params params;
+	#define __PARAMS__ 1
+	#endif
 }
 
 __forceinline__ __device__ unsigned char quantizeUnsigned8Bits(float x)
@@ -190,6 +198,14 @@ extern "C" __global__ void __raygen__raygeneration()
 	payload.numBounces = 0;
 	payload.hitNormal  = make_float3(0.0f);
 
+	RayData rayData;
+	rayData.initialize();
+	payload.rayData = &rayData;
+
+	setNextTraceState(TraceGaussianPass);
+	//
+	//float3 ray_origin = params.eye;
+	//float3 ray_direction = make_float3(0.0f);
 	if (!params.mode_fisheye) {
 		getRay(optixGetLaunchIndex(),
 			   -params.U,
@@ -200,6 +216,8 @@ extern "C" __global__ void __raygen__raygeneration()
 			   params.height,
 			   payload.currRayOrigin,
 			   payload.currRayDirection);
+			//ray_origin, ray_direction);
+
 	}
 	else {
 		getFishEyeRay(optixGetLaunchIndex(),
@@ -211,20 +229,25 @@ extern "C" __global__ void __raygen__raygeneration()
 					  params.height,
 					  payload.currRayOrigin,
 					  payload.currRayDirection);
+			//ray_origin, ray_direction);
 	}
 
 	// TODO: 3DGRUT trace state.
 	while ((length(payload.currRayDirection) > 0.1f) && (payload.numBounces < MAX_BOUNCES)) {
 		const float3 ray_o = payload.currRayOrigin;
 		const float3 ray_d = payload.currRayDirection;
-
+		
 		traceMesh(ray_o, ray_d, &payload);
 
-		float4 renderedGPs = make_float4(0.0f);
-		renderedGPs = traceGaussians(ray_o,
-									 ray_d,
-									 1e-9,
-									 payload.t_hit);
+		if (getNextTraceState() == TraceTerminate) break;
+
+		float4 gaussianRadiance;
+		if (getNextTraceState() == TraceLastGaussianPass) {
+			gaussianRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
+		}
+		else {
+			gaussianRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
+		}
 	}
 
 
@@ -273,6 +296,18 @@ extern "C" __global__ void __miss__miss()
 
 }
 
+#define compareAndSwapHitPayloadValue(hit, i_id, i_distance)                      \
+    {                                                                             \
+        const float distance = __uint_as_float(optixGetPayload_##i_distance##()); \
+        if (hit.distance < distance) {                                            \
+            optixSetPayload_##i_distance##(__float_as_uint(hit.distance));        \
+            const uint32_t id = optixGetPayload_##i_id##();                       \
+            optixSetPayload_##i_id##(hit.particleId);                             \
+            hit.distance   = distance;                                            \
+            hit.particleId = id;                                                  \
+        }                                                                         \
+    }
+
 extern "C" __global__ void __anyhit__anyhit()
 {
 	//RayPayload* prd = getRayPayLoad();
@@ -292,6 +327,31 @@ extern "C" __global__ void __anyhit__anyhit()
 	//}
 	//else {
 	//}
+
+	HitPayload hit = HitPayload{ optixGetInstanceId(), optixGetRayTmax() };
+	if (hit.distance < __uint_as_float(optixGetPayload_31())) {
+		compareAndSwapHitPayloadValue(hit, 0, 1);
+		compareAndSwapHitPayloadValue(hit, 2, 3);
+		compareAndSwapHitPayloadValue(hit, 4, 5);
+		compareAndSwapHitPayloadValue(hit, 6, 7);
+		compareAndSwapHitPayloadValue(hit, 8, 9);
+		compareAndSwapHitPayloadValue(hit, 10, 11);
+		compareAndSwapHitPayloadValue(hit, 12, 13);
+		compareAndSwapHitPayloadValue(hit, 14, 15);
+		compareAndSwapHitPayloadValue(hit, 16, 17);
+		compareAndSwapHitPayloadValue(hit, 18, 19);
+		compareAndSwapHitPayloadValue(hit, 20, 21);
+		compareAndSwapHitPayloadValue(hit, 22, 23);
+		compareAndSwapHitPayloadValue(hit, 24, 25);
+		compareAndSwapHitPayloadValue(hit, 26, 27);
+		compareAndSwapHitPayloadValue(hit, 28, 29);
+		compareAndSwapHitPayloadValue(hit, 30, 31);
+
+		// ignore all inserted hits, expect if the last one
+		if (__uint_as_float(optixGetPayload_31()) > optixGetRayTmax()) {
+			optixIgnoreIntersection();
+		}
+	}
 }
 
 
@@ -299,6 +359,7 @@ extern "C" __global__ void __closesthit__closesthit()
 {
 	RayPayload* payload = getRayPayLoad();
 	unsigned int numBounces = payload->numBounces;
+	unsigned int nextTraceState = getNextTraceState();
 
 	float  t_hit = optixGetRayTmax();
 	float3 ray_o = optixGetWorldRayOrigin();
@@ -308,6 +369,8 @@ extern "C" __global__ void __closesthit__closesthit()
 	float3 normal = getBarycentricNormal(hitMesh);
 
 	float3 newRayDirection = make_float3(0.0f);
+	nextTraceState = TraceGaussianPass;
+
 	if (params.type == MIRROR)
 		renderMirror(ray_d, normal, newRayDirection, numBounces);
 
@@ -316,14 +379,16 @@ extern "C" __global__ void __closesthit__closesthit()
 	payload->currRayDirection = newRayDirection;
 	payload->hitNormal        = normal;
 	payload->numBounces       = numBounces;
+
+	setNextTraceState(nextTraceState);
 	 
-	//prd->hit_count++;
-	//prd->hit_reflection_primitive = true;
-	//prd->t_hit_reflection = hit_t;
+	//payload->hit_count++;
+	//payload->hit_reflection_primitive = true;
+	//payload->t_hit_reflection = t_hit;
 
 	//Mesh hitMesh = params.d_meshes[optixGetInstanceId()];
 	//float3 hit_normal = getBarycentricNormal(hitMesh);
 
-	//prd->hit_normal = hit_normal;
-	//prd->hit_position = ray_d * hit_t + ray_o;
+	//payload->hit_normal = hit_normal;
+	//payload->hit_position = ray_d * t_hit + ray_o;
 }

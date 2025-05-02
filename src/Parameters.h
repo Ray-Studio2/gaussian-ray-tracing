@@ -34,11 +34,11 @@ struct Record
 	T data;
 };
 
-struct HitInfo
-{
-	float t;
-	int particleIndex;
-};
+//struct HitInfo
+//{
+//	float t;
+//	int particleIndex;
+//};
 
 struct Mesh
 {
@@ -78,25 +78,27 @@ struct Params
 	Mesh* d_meshes;
 
     int32_t type;
+	unsigned int traceState;
 };
 
-struct RayPayload
-{
-	//HitInfo      k_closest[MAX_K + 1];
-	//unsigned int hit_count;
-
-	//bool hit_reflection_primitive;
-	//float t_hit_reflection;
-
-	//float3 hit_normal;
-	//float3 hit_position;
-
-	float        t_hit;
-	float3       currRayOrigin;
-	float3       currRayDirection;
-	float3       hitNormal;
-	unsigned int numBounces;
-};
+//struct RayPayload
+//{
+//	//HitInfo      k_closest[MAX_K + 1];
+//	//unsigned int hit_count;
+//
+//	//bool hit_reflection_primitive;
+//	//float t_hit_reflection;
+//
+//	//float3 hit_normal;
+//	//float3 hit_position;
+//
+//	float        t_hit;
+//	float3       currRayOrigin;
+//	float3       currRayDirection;
+//	float3       hitNormal;
+//	unsigned int numBounces;
+//
+//};
 
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
@@ -105,4 +107,12 @@ typedef Record<HitData>    HitRecord;
 enum MeshType
 {
     MIRROR = 0,
+};
+
+enum TraceState
+{
+	TraceLastGaussianPass = 0,
+	TraceMeshPass		  = 1,
+	TraceGaussianPass	  = 2,
+	TraceTerminate		  = 3
 };

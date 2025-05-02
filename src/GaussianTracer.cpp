@@ -115,7 +115,7 @@ void GaussianTracer::createModule()
 
     pipeline_compile_options.usesMotionBlur = false;
     pipeline_compile_options.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
-    pipeline_compile_options.numPayloadValues = 2;
+    pipeline_compile_options.numPayloadValues = 32;
     pipeline_compile_options.numAttributeValues = 0;
 #if (OPTIX_VERSION < 80000)
     // OPTIX_EXCEPTION_FLAG_DEBUG Removed in OptiX SDK 8.0.0.
@@ -492,7 +492,8 @@ void GaussianTracer::initializeParams()
     params.reflection_render_normals = false;
     params.mode_fisheye              = false;
 
-    params.type = MIRROR;
+    params.type       = MIRROR;
+	params.traceState = TraceLastGaussianPass;
 
     {
         CUdeviceptr d_particles;
