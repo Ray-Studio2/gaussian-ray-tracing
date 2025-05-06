@@ -6,10 +6,10 @@
 #include "../src/vector_math.h"
 
 // Reference: 3DGRUT (https://github.com/nv-tlabs/3dgrut)
-constexpr float TRACE_MESH_TMIN = 1e-5;
-constexpr float TRACE_MESH_TMAX = 1e5;
-static constexpr unsigned int MaxNumHitPerTrace = 7;
-constexpr uint32_t TIMEOUT_ITERATIONS = 1000;
+constexpr float TRACE_MESH_TMIN                    = 1e-5;
+constexpr float TRACE_MESH_TMAX                    = 1e5;
+static    constexpr unsigned int MaxNumHitPerTrace = 7;
+constexpr uint32_t TIMEOUT_ITERATIONS              = 1000;
 
 extern "C"
 {
@@ -60,20 +60,12 @@ struct HitPayload
 };
 using GaussianPayload = HitPayload[MaxNumHitPerTrace];
 
-//extern "C"
-//{
-//	__constant__ Params params;
-//}
-
-//static __forceinline__ __device__ void setNextTraceState(unsigned int traceState)
-//{
-//	params.traceState = traceState;
-//}
-//
-//static __forceinline__ __device__ unsigned int getNextTraceState()
-//{
-//	return params.traceState;
-//}
+__forceinline__ __device__ unsigned char quantizeUnsigned8Bits(float x)
+{
+	x = clamp(x, 0.0f, 1.0f);
+	enum { N = (1 << 8) - 1, Np1 = (1 << 8) };
+	return (unsigned char)min((unsigned int)(x * (float)Np1), (unsigned int)N);
+}
 
 static __forceinline__ __device__ void packPointer(void* ptr, uint32_t& u0, uint32_t& u1)
 {
@@ -249,7 +241,6 @@ static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, f
 
 static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_direction, RayPayload* payload)
 {
-	//setNextTraceState(TraceMeshPass);
     payload->traceState = TraceMeshPass;
 	
 	uint32_t u0, u1;
@@ -354,7 +345,7 @@ static __forceinline__ __device__ void trace(RayData& rayData,
 	}
 
     rayData.radiance = radiance;
-    rayData.density = 1.0f - rayTransmittance;
+    rayData.density  = 1.0f - rayTransmittance;
 }
 
 static __forceinline__ __device__ float4 traceGaussians(RayData& rayData,
@@ -364,10 +355,7 @@ static __forceinline__ __device__ float4 traceGaussians(RayData& rayData,
 	                                                    const float t_max,
 	                                                    RayPayload* payload)
 {
-	RayData prevRayData = rayData;
-
-	//setNextTraceState(TraceGaussianPass);
-    payload->traceState = TraceGaussianPass;
+	payload->traceState = TraceGaussianPass;
 
 	trace(rayData, ray_o, ray_d, t_min, t_max);
 
@@ -389,4 +377,18 @@ static __forceinline__ __device__ void renderMirror(const float3 ray_d,
 	// TODO: safe normalize, check 3DGRUT reflected normal.
 	newRayDirction = reflect(ray_d, normal);
 	numBounces += 1;
+}
+
+static __forceinline__ __device__ void writeOutputBuffer(float3 rgb)
+{
+	const uint3 launch_index = optixGetLaunchIndex();
+    const unsigned int image_index = launch_index.y * params.width + launch_index.x;
+
+	rgb = clamp(rgb, 0.0f, 1.0f);
+
+    params.output_buffer[image_index] = make_uchar3(
+        quantizeUnsigned8Bits(rgb.x),
+        quantizeUnsigned8Bits(rgb.y),
+        quantizeUnsigned8Bits(rgb.z)
+    );
 }
