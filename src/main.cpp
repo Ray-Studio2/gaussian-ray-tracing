@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 
-	std::string filename = ply_flag ? args::get(ply_flag) : "../data/test.ply";
+	std::string filename = ply_flag ? args::get(ply_flag) : "../data/train.ply";
 	GaussianTracer tracer(filename);
 	
 	unsigned int width  = width_flag ? args::get(width_flag) : 1280;

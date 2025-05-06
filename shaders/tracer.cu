@@ -30,86 +30,86 @@ __forceinline__ __device__ unsigned char quantizeUnsigned8Bits(float x)
 	return (unsigned char)min((unsigned int)(x * (float)Np1), (unsigned int)N);
 }
 
-static __forceinline__ __device__ float3 SHToRadiance(GaussianParticle& gp, float3& d)
-{
-	float3 sh[16];
-	for (int i = 0; i < 16; i++) {
-		sh[i] = gp.sh[i];
-	}
+//static __forceinline__ __device__ float3 SHToRadiance(GaussianParticle& gp, float3& d)
+//{
+//	float3 sh[16];
+//	for (int i = 0; i < 16; i++) {
+//		sh[i] = gp.sh[i];
+//	}
+//
+//	float3 L = make_float3(0.5f) + SH_C0 * sh[0];
+//	if (params.sh_degree_max == 0)
+//		return L;
+//
+//	float x = d.x;
+//	float y = d.y;
+//	float z = d.z;
+//	L += SH_C1 * (-y * sh[1] + z * sh[2] - x * sh[3]);
+//	if (params.sh_degree_max == 1)
+//		return L;
+//
+//	float xx = x * x;
+//	float yy = y * y;
+//	float zz = z * z;
+//	float xy = x * y;
+//	float xz = x * z;
+//	float yz = y * z;
+//	L +=
+//		SH_C2_0 * xy * sh[4] +
+//		SH_C2_1 * yz * sh[5] +
+//		SH_C2_2 * (2. * zz - xx - yy) * sh[6] +
+//		SH_C2_3 * xz * sh[7] +
+//		SH_C2_4 * (xx - yy) * sh[8];
+//	if (params.sh_degree_max == 2)
+//		return L;
+//
+//	L +=
+//		SH_C3_0 * y * (3.0f * xx - yy) * sh[9] +
+//		SH_C3_1 * xy * z * sh[10] +
+//		SH_C3_2 * y * (4.0f * zz - xx - yy) * sh[11] +
+//		SH_C3_3 * z * (2.0f * zz - 3.0f * xx - 3.0f * yy) * sh[12] +
+//		SH_C3_4 * x * (4.0f * zz - xx - yy) * sh[13] +
+//		SH_C3_5 * z * (xx - yy) * sh[14] +
+//		SH_C3_6 * x * (xx - 3.0f * yy) * sh[15];
+//	return L;
+//}
 
-	float3 L = make_float3(0.5f) + SH_C0 * sh[0];
-	if (params.sh_degree_max == 0)
-		return L;
+//static __forceinline__ __device__ float computeResponse(
+//	GaussianParticle& gp,
+//	const float3& o,
+//	const float3& d
+//)
+//{
+//	glm::vec3 mu = glm::vec3(gp.position.x, gp.position.y, gp.position.z);
+//
+//	glm::mat3 R = glm::mat3_cast(gp.rotation);
+//	glm::mat3 RT = glm::transpose(R);
+//
+//	glm::mat3 inv_s(1.0f);
+//	inv_s[0][0] = 1.0f / gp.scale.x;
+//	inv_s[1][1] = 1.0f / gp.scale.y;
+//	inv_s[2][2] = 1.0f / gp.scale.z;
+//
+//	glm::mat3 invCov = inv_s * RT;
+//
+//	glm::vec3 _o = glm::vec3(o.x, o.y, o.z);
+//	glm::vec3 _d = glm::vec3(d.x, d.y, d.z);
+//
+//	glm::vec3 o_g = invCov * (_o - mu);
+//	glm::vec3 d_g = invCov * _d;
+//
+//	float d_val = -glm::dot(o_g, d_g) / fmaxf(1e-6f, glm::dot(d_g, d_g));
+//	glm::vec3 pos = _o + d_val * _d;
+//	glm::vec3 p_g = invCov * (mu - pos);
+//
+//	return exp(-0.5f * glm::dot(p_g, p_g));
+//}
 
-	float x = d.x;
-	float y = d.y;
-	float z = d.z;
-	L += SH_C1 * (-y * sh[1] + z * sh[2] - x * sh[3]);
-	if (params.sh_degree_max == 1)
-		return L;
-
-	float xx = x * x;
-	float yy = y * y;
-	float zz = z * z;
-	float xy = x * y;
-	float xz = x * z;
-	float yz = y * z;
-	L +=
-		SH_C2_0 * xy * sh[4] +
-		SH_C2_1 * yz * sh[5] +
-		SH_C2_2 * (2. * zz - xx - yy) * sh[6] +
-		SH_C2_3 * xz * sh[7] +
-		SH_C2_4 * (xx - yy) * sh[8];
-	if (params.sh_degree_max == 2)
-		return L;
-
-	L +=
-		SH_C3_0 * y * (3.0f * xx - yy) * sh[9] +
-		SH_C3_1 * xy * z * sh[10] +
-		SH_C3_2 * y * (4.0f * zz - xx - yy) * sh[11] +
-		SH_C3_3 * z * (2.0f * zz - 3.0f * xx - 3.0f * yy) * sh[12] +
-		SH_C3_4 * x * (4.0f * zz - xx - yy) * sh[13] +
-		SH_C3_5 * z * (xx - yy) * sh[14] +
-		SH_C3_6 * x * (xx - 3.0f * yy) * sh[15];
-	return L;
-}
-
-static __forceinline__ __device__ float computeResponse(
-	GaussianParticle& gp,
-	const float3& o,
-	const float3& d
-)
-{
-	glm::vec3 mu = glm::vec3(gp.position.x, gp.position.y, gp.position.z);
-
-	glm::mat3 R = glm::mat3_cast(gp.rotation);
-	glm::mat3 RT = glm::transpose(R);
-
-	glm::mat3 inv_s(1.0f);
-	inv_s[0][0] = 1.0f / gp.scale.x;
-	inv_s[1][1] = 1.0f / gp.scale.y;
-	inv_s[2][2] = 1.0f / gp.scale.z;
-
-	glm::mat3 invCov = inv_s * RT;
-
-	glm::vec3 _o = glm::vec3(o.x, o.y, o.z);
-	glm::vec3 _d = glm::vec3(d.x, d.y, d.z);
-
-	glm::vec3 o_g = invCov * (_o - mu);
-	glm::vec3 d_g = invCov * _d;
-
-	float d_val = -glm::dot(o_g, d_g) / fmaxf(1e-6f, glm::dot(d_g, d_g));
-	glm::vec3 pos = _o + d_val * _d;
-	glm::vec3 p_g = invCov * (mu - pos);
-
-	return exp(-0.5f * glm::dot(p_g, p_g));
-}
-
-static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, float3& d)
-{
-	float3 L = SHToRadiance(gp, d);
-	return make_float3(fmaxf(L.x, 0.0f), fmaxf(L.y, 0.0f), fmaxf(L.z, 0.0f));
-}
+//static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, float3& d)
+//{
+//	float3 L = SHToRadiance(gp, d);
+//	return make_float3(fmaxf(L.x, 0.0f), fmaxf(L.y, 0.0f), fmaxf(L.z, 0.0f));
+//}
 
 //static __forceinline__ __device__ float3 trace(
 //	OptixTraversableHandle handle,
@@ -202,10 +202,9 @@ extern "C" __global__ void __raygen__raygeneration()
 	rayData.initialize();
 	payload.rayData = &rayData;
 
-	setNextTraceState(TraceGaussianPass);
-	//
-	//float3 ray_origin = params.eye;
-	//float3 ray_direction = make_float3(0.0f);
+	//setNextTraceState(TraceGaussianPass);
+    payload.traceState = TraceGaussianPass;
+
 	if (!params.mode_fisheye) {
 		getRay(optixGetLaunchIndex(),
 			   -params.U,
@@ -216,8 +215,6 @@ extern "C" __global__ void __raygen__raygeneration()
 			   params.height,
 			   payload.currRayOrigin,
 			   payload.currRayDirection);
-			//ray_origin, ray_direction);
-
 	}
 	else {
 		getFishEyeRay(optixGetLaunchIndex(),
@@ -229,27 +226,59 @@ extern "C" __global__ void __raygen__raygeneration()
 					  params.height,
 					  payload.currRayOrigin,
 					  payload.currRayDirection);
-			//ray_origin, ray_direction);
 	}
 
 	// TODO: 3DGRUT trace state.
-	while ((length(payload.currRayDirection) > 0.1f) && (payload.numBounces < MAX_BOUNCES)) {
-		const float3 ray_o = payload.currRayOrigin;
-		const float3 ray_d = payload.currRayDirection;
+    float3 result;
+    unsigned int timeout = 0;
+	//while ((length(payload.currRayDirection) > 0.1f) && (payload.numBounces < MAX_BOUNCES)) {
+	const float3 ray_o = payload.currRayOrigin;
+	const float3 ray_d = payload.currRayDirection;
 		
-		traceMesh(ray_o, ray_d, &payload);
+	traceMesh(ray_o, ray_d, &payload);
 
-		if (getNextTraceState() == TraceTerminate) break;
+    if (payload.t_hit == 0.0f) payload.t_hit = params.t_max;
 
-		float4 gaussianRadiance;
-		if (getNextTraceState() == TraceLastGaussianPass) {
-			gaussianRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
-		}
-		else {
-			gaussianRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
-		}
-	}
+	//if (getNextTraceState() == TraceTerminate) break;
+    //if (payload.traceState == TraceTerminate) break;
 
+    traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
+    result = make_float3(payload.rayData->radiance.x, payload.rayData->radiance.y, payload.rayData->radiance.z);
+        //float4 gaussianRadDns;
+        //if (payload.traceState == TraceLastGaussianPass) {
+        //    result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
+        //    payload.traceState = TraceTerminate;
+        //}
+        //else {
+        //    result = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
+        //}
+		//float4 gaussianRadiance;
+		//if (getNextTraceState() == TraceLastGaussianPass) {
+  //      if (payload.traceState == TraceLastGaussianPass) {
+		//	result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
+		//}
+		//else {
+		//	result = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
+		//}
+
+        //result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
+
+ //       timeout += 1;
+ //       if (timeout > TIMEOUT_ITERATIONS)
+ //           break;
+	//}
+
+    const uint3    launch_index = optixGetLaunchIndex();
+    const unsigned int image_index = launch_index.y * params.width + launch_index.x;
+    float3 accum_color = make_float3(result.x, result.y, result.z);
+
+    float3 rgb = clamp(accum_color, 0.0f, 1.0f);
+
+    params.output_buffer[image_index] = make_uchar3(
+        quantizeUnsigned8Bits(rgb.x),
+        quantizeUnsigned8Bits(rgb.y),
+        quantizeUnsigned8Bits(rgb.z)
+    );
 
 
 	//float3 result = make_float3(0.0f);
@@ -293,7 +322,13 @@ extern "C" __global__ void __raygen__raygeneration()
 
 extern "C" __global__ void __miss__miss()
 {
+    //RayPayload* payload = getRayPayLoad();
 
+    //if (payload->traceState == TraceMeshPass) {
+    //    payload->currRayOrigin    = make_float3(0.0f);
+    //    payload->currRayDirection = make_float3(0.0f);
+    //    payload->traceState       = TraceLastGaussianPass;
+    //}
 }
 
 #define compareAndSwapHitPayloadValue(hit, i_id, i_distance)                      \
@@ -310,26 +345,8 @@ extern "C" __global__ void __miss__miss()
 
 extern "C" __global__ void __anyhit__anyhit()
 {
-	//RayPayload* prd = getRayPayLoad();
-
-	//prd->hit_count++;
-
-	//unsigned int particle_index = optixGetInstanceId();
-
-	//HitInfo hit_info = { optixGetRayTmax(), particle_index };
-	//for (int i = 0; i < params.k; i++) {
-	//	if (hit_info.t < prd->k_closest[i].t)
-	//		swap(hit_info, prd->k_closest[i]);
-	//}
-
-	//if (optixGetRayTmax() < prd->k_closest[params.k - 1].t) {
-	//	optixIgnoreIntersection();
-	//}
-	//else {
-	//}
-
 	HitPayload hit = HitPayload{ optixGetInstanceId(), optixGetRayTmax() };
-	if (hit.distance < __uint_as_float(optixGetPayload_31())) {
+	if (hit.distance < __uint_as_float(optixGetPayload_13())) {
 		compareAndSwapHitPayloadValue(hit, 0, 1);
 		compareAndSwapHitPayloadValue(hit, 2, 3);
 		compareAndSwapHitPayloadValue(hit, 4, 5);
@@ -337,29 +354,20 @@ extern "C" __global__ void __anyhit__anyhit()
 		compareAndSwapHitPayloadValue(hit, 8, 9);
 		compareAndSwapHitPayloadValue(hit, 10, 11);
 		compareAndSwapHitPayloadValue(hit, 12, 13);
-		compareAndSwapHitPayloadValue(hit, 14, 15);
-		compareAndSwapHitPayloadValue(hit, 16, 17);
-		compareAndSwapHitPayloadValue(hit, 18, 19);
-		compareAndSwapHitPayloadValue(hit, 20, 21);
-		compareAndSwapHitPayloadValue(hit, 22, 23);
-		compareAndSwapHitPayloadValue(hit, 24, 25);
-		compareAndSwapHitPayloadValue(hit, 26, 27);
-		compareAndSwapHitPayloadValue(hit, 28, 29);
-		compareAndSwapHitPayloadValue(hit, 30, 31);
 
 		// ignore all inserted hits, expect if the last one
-		if (__uint_as_float(optixGetPayload_31()) > optixGetRayTmax()) {
+		if (__uint_as_float(optixGetPayload_13()) > optixGetRayTmax()) {
 			optixIgnoreIntersection();
 		}
 	}
 }
 
-
 extern "C" __global__ void __closesthit__closesthit()
 {
 	RayPayload* payload = getRayPayLoad();
 	unsigned int numBounces = payload->numBounces;
-	unsigned int nextTraceState = getNextTraceState();
+	//unsigned int nextTraceState = getNextTraceState();
+    unsigned int nextTraceState = payload->traceState;
 
 	float  t_hit = optixGetRayTmax();
 	float3 ray_o = optixGetWorldRayOrigin();
@@ -380,7 +388,8 @@ extern "C" __global__ void __closesthit__closesthit()
 	payload->hitNormal        = normal;
 	payload->numBounces       = numBounces;
 
-	setNextTraceState(nextTraceState);
+	//setNextTraceState(nextTraceState);
+    payload->traceState = nextTraceState;
 	 
 	//payload->hit_count++;
 	//payload->hit_reflection_primitive = true;
