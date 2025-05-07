@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 	Camera camera;
 	gui.setGaussianCenter(tracer.getGaussianCenter());
 	gui.initCamera(&camera);
-	tracer.initParams();
 
 	std::chrono::duration<double> state_update_time(0.0);
 	std::chrono::duration<double> render_time(0.0);

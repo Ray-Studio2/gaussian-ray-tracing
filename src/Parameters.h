@@ -7,7 +7,6 @@
 #include "GaussianData.h"
 #include "geometry/Primitives.h"
 
-#define MAX_K 6
 #define SH_C0     0.28209479177387814f
 #define SH_C1     0.4886025119029199f
 #define SH_C2_0   1.0925484305920792f
@@ -23,12 +22,6 @@
 #define SH_C3_5   1.445305721320277f
 #define SH_C3_6  -0.5900435899266435f
 
-enum RayType
-{
-	RAY_TYPE_RADIANCE = 0,
-	RAY_TYPE_COUNT
-};
-
 struct RayGenData { };
 struct MissData   { };
 struct HitData    { };
@@ -40,27 +33,10 @@ struct Record
 	T data;
 };
 
-struct HitInfo
-{
-	float t;
-	int particleIndex;
-};
-
-struct Vertex
-{
-	float3 position;
-	float3 normal;
-};
-
-struct Face
-{
-	uint3 indices;
-};
-
 struct Mesh
 {
-	Vertex* vertices;
-	Face*   faces;
+	uint3*  faces;
+	float3* vertex_normals;
 };
 
 struct Params
@@ -69,7 +45,6 @@ struct Params
 
 	unsigned int width;
 	unsigned int height;
-	int			 k;
 	unsigned int sh_degree_max;
 
 	float3 eye;
@@ -79,33 +54,39 @@ struct Params
 
 	float t_min;
 	float t_max;
-	float T_min;
+	float minTransmittance;
 	float alpha_min;
 
 	OptixTraversableHandle handle;
 	GaussianParticle* d_particles;
 
-	// Reflection
-	OptixTraversableHandle reflection_handle;
-	bool has_reflection_objects;
+	// Mesh
+	OptixTraversableHandle mesh_handle;
 	bool reflection_render_normals;
 
 	// FishEye
 	bool mode_fisheye;
 
 	Mesh* d_meshes;
-};
 
-struct RayPayload
-{
-	HitInfo      k_closest[MAX_K + 1];
-	unsigned int hit_count;
+    int32_t type;
 
-	bool hit_reflection_primitive;
-	float t_hit_reflection;
-	Vertex reflection_vertex;
+	unsigned int* traceState;
 };
 
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
 typedef Record<HitData>    HitRecord;
+
+enum MeshType
+{
+    MIRROR = 0,
+};
+
+enum TraceState
+{
+	TraceLastGaussianPass = 0,
+	TraceGaussianPass     = 1,
+	TraceMeshPass         = 2,
+	TraceTerminate        = 3
+};
