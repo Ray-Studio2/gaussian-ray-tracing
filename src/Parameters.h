@@ -7,7 +7,6 @@
 #include "GaussianData.h"
 #include "geometry/Primitives.h"
 
-// #define MAX_K 7
 #define SH_C0     0.28209479177387814f
 #define SH_C1     0.4886025119029199f
 #define SH_C2_0   1.0925484305920792f
@@ -46,7 +45,6 @@ struct Params
 
 	unsigned int width;
 	unsigned int height;
-	// int			 k;
 	unsigned int sh_degree_max;
 
 	float3 eye;
@@ -87,7 +85,8 @@ enum MeshType
 
 enum TraceState
 {
-	TraceGaussianPass = 0,
-	TraceMeshPass     = 1,
-	TraceTerminate    = 2
+	TraceLastGaussianPass = 0,
+	TraceGaussianPass     = 1,
+	TraceMeshPass         = 2,
+	TraceTerminate        = 3
 };

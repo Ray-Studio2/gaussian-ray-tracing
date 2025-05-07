@@ -46,6 +46,9 @@ struct RayPayload
 	float3       hitNormal;
 	unsigned int numBounces;
 	float3       accumColor;
+	float        accumAlpha;
+	float3  	 directLight;
+	float 		 blockingRadiance;
 
 	RayData* rayData;
 };
@@ -367,7 +370,7 @@ static __forceinline__ __device__ void trace(RayData& rayData,
     rayData.density  = 1.0f - rayTransmittance;
 }
 
-static __forceinline__ __device__ float3 traceGaussians(RayData& rayData,
+static __forceinline__ __device__ float4 traceGaussians(RayData& rayData,
 	                                                    const float3& ray_o,
 	                                                    const float3& ray_d,
 	                                                    const float t_min,
@@ -378,10 +381,11 @@ static __forceinline__ __device__ float3 traceGaussians(RayData& rayData,
 
 	trace(rayData, ray_o, ray_d, t_min, t_max);
 
-    float3 accumulated_radiance = make_float3(
+    float4 accumulated_radiance = make_float4(
         rayData.radiance.x,
         rayData.radiance.y,
-        rayData.radiance.z
+        rayData.radiance.z,
+		rayData.density
     );
 
     return accumulated_radiance;

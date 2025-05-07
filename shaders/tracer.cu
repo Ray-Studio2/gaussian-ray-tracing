@@ -20,10 +20,13 @@ extern "C" __global__ void __raygen__raygeneration()
 {
 	// Initialize payload.
 	RayPayload payload;
-	payload.t_hit      = 0.0f;
-	payload.numBounces = 0;
-	payload.hitNormal  = make_float3(0.0f);
-	payload.accumColor = make_float3(0.0f);
+	payload.t_hit            = 0.0f;
+	payload.numBounces       = 0;
+	payload.hitNormal        = make_float3(0.0f);
+	payload.accumColor       = make_float3(0.0f);
+	payload.accumAlpha       = 0.0f;
+	payload.blockingRadiance = 0.0f;
+	payload.directLight      = make_float3(0.0f);
 
 	RayData rayData;
 	rayData.initialize();
@@ -61,15 +64,43 @@ extern "C" __global__ void __raygen__raygeneration()
 
 		traceMesh(ray_o, ray_d, &payload);
 		
-		if (payload.t_hit == 0.0f) payload.t_hit = params.t_max;
 		if (getNextTraceState() == TraceTerminate) break;
 		
-		float3 gsRadiance;
-		if (getNextTraceState() == TraceGaussianPass) {
-			gsRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
-			payload.accumColor = gsRadiance;
+		float4 gsRadDns;
+		if (getNextTraceState() == TraceLastGaussianPass) {
+			gsRadDns = traceGaussians(rayData, 
+										ray_o, 
+										ray_d, 
+										params.t_min, 
+										params.t_max, 
+										&payload);
+			float3 radiance = make_float3(gsRadDns.x, 
+							  			  gsRadDns.y, 
+										  gsRadDns.z);
+			float alpha = gsRadDns.w;
+
+			payload.directLight = radiance * alpha;
+			payload.accumAlpha = clamp(payload.accumAlpha + alpha , 0.0f, 1.0f);
 			setNextTraceState(TraceTerminate);
 		}
+		else {
+			gsRadDns = traceGaussians(rayData, 
+										ray_o, 
+										ray_d, 
+										params.t_min, 
+										payload.t_hit, 
+										&payload);
+			float3 radiance = make_float3(gsRadDns.x, 
+										  gsRadDns.y, 
+										  gsRadDns.z);
+			float alpha = gsRadDns.w;
+			
+			payload.accumColor += make_float3(1.0f - payload.accumAlpha) * radiance;
+			payload.accumAlpha = clamp(payload.accumAlpha + alpha, 0.0f, 1.0f);
+			payload.blockingRadiance = clamp(payload.blockingRadiance + alpha, 0.0f, 1.0f);
+		}
+
+		payload.accumColor += payload.directLight * (1.0f - payload.blockingRadiance);
 
 		timeout += 1;
 		if (timeout > TIMEOUT_ITERATIONS)
@@ -88,7 +119,7 @@ extern "C" __global__ void __miss__miss()
 		payload->currRayOrigin    = make_float3(0.0f);
 		payload->currRayDirection = make_float3(0.0f);
 
-		setNextTraceState(TraceGaussianPass);
+		setNextTraceState(TraceLastGaussianPass);
 	}
 }
 
