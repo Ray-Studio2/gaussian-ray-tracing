@@ -293,19 +293,6 @@ void GUI::renderPanel()
     ImGui::SetNextWindowSize(ImVec2(300, m_height - 40));
     ImGui::Begin("Pannel");
 
-    if (ImGui::CollapsingHeader("DEBUG"))
-	{
-        ImGui::PushItemWidth(100);
-
-		ImGui::SliderInt("Hit array size", &m_tracer->params.k, 1, 6);
-		ImGui::SliderFloat("Alpha min", &m_tracer->params.alpha_min, 0.01f, 0.2f);
-		ImGui::SliderFloat("T min", &m_tracer->params.minTransmittance, 0.03f, 0.99f);
-
-        ImGui::PopItemWidth();
-	}
-
-    ImGui::Spacing();
-
     if (ImGui::CollapsingHeader("Camera Mode")) {
         if (ImGui::RadioButton("Pinhole", !is_fisheye_mode)) {
             is_fisheye_mode = false;
