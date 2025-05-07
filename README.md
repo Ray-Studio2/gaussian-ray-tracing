@@ -1,6 +1,10 @@
 # 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes
 This repository is an **unofficial implementation** of the paper **"3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"**. It may not fully reproduce all the results or optimizations presented in the original paper, and it currently contains some bugs that will be continuously addressed in future updates. Additionally, new features will be added over time. Note that training code has not been implemented yet; only a partial application described in the paper is available at this time.
 
+## 😊 Update
+- Refactored code using NVIDIA’s newly released 3DGRUT.
+- Resolved gaussian particles rendering issues (needs further improvement)
+
 ## 🛩️ Features
 - **Supported File Format**: Only trained PLY files are supported.   
 - **Supported Modes**: Currently reflection and fisheye modes are available.   
@@ -13,7 +17,7 @@ This repository is an **unofficial implementation** of the paper **"3D Gaussian 
 - Requires an NVIDIA GPU; testing was conducted on an RTX 4090.
 - Visual Studio 2022
 - __[CUDA](https://developer.nvidia.com/cuda-toolkit)__ 11.4 or higher
-- __[CMake](https://cmake.org/)__ v3.8 or higher.
+- __[CMake](https://cmake.org/)__ v3.8. (It has not been tested on CMake versions above v3.22.)
 - __[Optix](https://developer.nvidia.com/rtx/ray-tracing/optix)__ 7.7.0 or higher.
 
 ### Compilation
@@ -51,12 +55,6 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
   <img width="60%" src="assets/fisheye.gif">
 </p>
 
-### 🏗️ Other features
-- Gizmo
-<p align="center">
-  <img width="60%" src="assets/gizmo.gif">
-</p>
-
 ### Keyboard shortcuts
 | Key             | Meaning       |
 | :-------------: | ------------- |
@@ -72,13 +70,12 @@ This project was developed with reference to the following repositories and reso
 - [WebGPU Gaussian Tracer](https://github.com/meta-plane/WebGPU-GaussianTracer)
 - [NVIDIA OptiX Apps](https://github.com/NVIDIA/OptiX_Apps)
 - OptiX SDK examples
+- [3DGRUT](https://github.com/nv-tlabs/3dgrut)
 
 ## 📒ToDo list
-- Gaussian Particles Rendering Issue Improvement
-  - Currently, our Gaussian particle rendering exhibits artifacts and does not match the official code’s results. We will address these bugs and improve the code in an upcoming update.   
-- Add support Gaussian particles SH
 - Remove Individual Meshes   
 - Add Refraction Feature   
 - Code Refactoring   
 - Miscellaneous Bug Fixes   
 - Fix the OBJ loader (match the current scene’s scale, resolve normal issues)
+- Further optimize rendering speed to match the performance of the official implementation.
