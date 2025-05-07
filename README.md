@@ -2,7 +2,7 @@
 This repository is an **unofficial implementation** of the paper **"3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"**. It may not fully reproduce all the results or optimizations presented in the original paper, and it currently contains some bugs that will be continuously addressed in future updates. Additionally, new features will be added over time. Note that training code has not been implemented yet; only a partial application described in the paper is available at this time.
 
 ## 😊 Update
-- Refactored code using NVIDIA’s newly released 3DGRUT.
+- Refactored the code by referencing NVIDIA’s newly released 3DGRUT.
 - Resolved gaussian particles rendering issues (needs further improvement)
 
 ## 🛩️ Features
