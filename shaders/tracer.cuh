@@ -10,6 +10,8 @@ constexpr float TRACE_MESH_TMIN                    = 1e-5;
 constexpr float TRACE_MESH_TMAX                    = 1e5;
 static    constexpr unsigned int MaxNumHitPerTrace = 7;
 constexpr uint32_t TIMEOUT_ITERATIONS              = 1000;
+constexpr uint32_t MAX_BOUNCES                     = 32;
+constexpr float REFRACTION_EPS_SHIFT			   = 1e-5f;
 
 extern "C"
 {
@@ -424,6 +426,60 @@ static __forceinline__ __device__ void renderNormal(const float3 ray_o,
 	payload->accumAlpha += (1.0f - alpha);
 
 	traceState = TraceTerminate;
+}
+
+static __forceinline__ __device__ bool refract(float3& newRayDirction,
+											   const float3 ray_d,
+											   float3 normal,
+											   const float etai_over_etat)
+{
+	float ri;
+	if (dot(ray_d, normal) < 0.0f) {
+		ri = 1.0f / etai_over_etat;
+	}
+	else {
+		ri = etai_over_etat;
+		normal = -normal;
+	}
+
+	float cos_theta = fminf(dot(-ray_d, normal), 1.0f);
+	float sin_theta = sqrtf(1.0f - cos_theta * cos_theta);
+
+	bool can_refract = ri * sin_theta <= 1.0f;
+	if (can_refract) {
+		float3 r_out_perp = ri * (ray_d + cos_theta * normal);
+		float3 r_out_parallel = -sqrtf(fabsf(1.0f - dot(r_out_perp, r_out_perp))) * normal;
+
+		newRayDirction = r_out_perp + r_out_parallel;
+		// newRayDirction = normalize(newRayDirction);
+	}
+
+	return can_refract;
+}
+
+static __forceinline__ __device__ void renderGlass(const float3 ray_d,
+												   float3 normal,
+												   float3& newRayDirction,
+												   float& t_hit,
+												   unsigned int& numBounces)
+{
+	const Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
+	const unsigned int primitive_index = optixGetPrimitiveIndex();
+	
+	float n1 = 1.0003f; // Air
+	float n2 = hitMesh.faces[primitive_index].x;
+	float etai_over_etat = n2 / n1;
+
+	bool can_refract = refract(newRayDirction, ray_d, normal, etai_over_etat);
+	if (!can_refract) {
+		float3 reflected_normal = dot(ray_d, normal) < 0.0f ? normal : -normal;
+		newRayDirction = reflect(ray_d, reflected_normal);
+		// newRayDirction = normalize(newRayDirction);
+		numBounces += 1;
+	}
+	else {
+		t_hit += REFRACTION_EPS_SHIFT;
+	}
 }
 
 static __forceinline__ __device__ void writeOutputBuffer(float3 rgb)

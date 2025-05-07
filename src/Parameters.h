@@ -80,7 +80,8 @@ typedef Record<HitData>    HitRecord;
 enum MeshType
 {
     MIRROR = 0,
-	NORMAL = 1
+	NORMAL = 1,
+	GLASS  = 2
 };
 
 enum TraceState

@@ -6,8 +6,6 @@
 
 #include "tracer.cuh"
 
-constexpr uint32_t MAX_BOUNCES = 32;
-
 extern "C"
 {
 	#ifndef __PARAMS__
@@ -174,6 +172,9 @@ extern "C" __global__ void __closesthit__closesthit()
 		renderMirror(ray_d, normal, newRayDirection, numBounces);
 	else if (params.type == NORMAL) {
 		renderNormal(ray_o, ray_d, normal, t_hit, nextState, payload);
+	}
+	else if (params.type == GLASS) {
+		renderGlass(ray_d, normal, newRayDirection, t_hit, numBounces);
 	}
 
 	payload->t_hit            = t_hit;
