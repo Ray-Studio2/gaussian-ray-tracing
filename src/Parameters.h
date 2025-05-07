@@ -7,7 +7,7 @@
 #include "GaussianData.h"
 #include "geometry/Primitives.h"
 
-#define MAX_K 7
+// #define MAX_K 7
 #define SH_C0     0.28209479177387814f
 #define SH_C1     0.4886025119029199f
 #define SH_C2_0   1.0925484305920792f
@@ -34,12 +34,6 @@ struct Record
 	T data;
 };
 
-//struct HitInfo
-//{
-//	float t;
-//	int particleIndex;
-//};
-
 struct Mesh
 {
 	uint3*  faces;
@@ -52,7 +46,7 @@ struct Params
 
 	unsigned int width;
 	unsigned int height;
-	int			 k;
+	// int			 k;
 	unsigned int sh_degree_max;
 
 	float3 eye;
@@ -78,27 +72,9 @@ struct Params
 	Mesh* d_meshes;
 
     int32_t type;
-	unsigned int traceState;
-};
 
-//struct RayPayload
-//{
-//	//HitInfo      k_closest[MAX_K + 1];
-//	//unsigned int hit_count;
-//
-//	//bool hit_reflection_primitive;
-//	//float t_hit_reflection;
-//
-//	//float3 hit_normal;
-//	//float3 hit_position;
-//
-//	float        t_hit;
-//	float3       currRayOrigin;
-//	float3       currRayDirection;
-//	float3       hitNormal;
-//	unsigned int numBounces;
-//
-//};
+	unsigned int* traceState;
+};
 
 typedef Record<RayGenData> RayGenRecord;
 typedef Record<MissData>   MissRecord;
@@ -111,8 +87,7 @@ enum MeshType
 
 enum TraceState
 {
-	TraceLastGaussianPass = 0,
-	TraceMeshPass		  = 1,
-	TraceGaussianPass	  = 2,
-	TraceTerminate		  = 3
+	TraceGaussianPass = 0,
+	TraceMeshPass     = 1,
+	TraceTerminate    = 2
 };

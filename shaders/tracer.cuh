@@ -45,7 +45,7 @@ struct RayPayload
 	float3       currRayDirection;
 	float3       hitNormal;
 	unsigned int numBounces;
-    unsigned int traceState;
+	float3       accumColor;
 
 	RayData* rayData;
 };
@@ -65,6 +65,25 @@ __forceinline__ __device__ unsigned char quantizeUnsigned8Bits(float x)
 	x = clamp(x, 0.0f, 1.0f);
 	enum { N = (1 << 8) - 1, Np1 = (1 << 8) };
 	return (unsigned char)min((unsigned int)(x * (float)Np1), (unsigned int)N);
+}
+
+static __forceinline__ __device__ void setNextTraceState(unsigned int state)
+{
+	const uint3 idx = optixGetLaunchIndex();
+	uint32_t px = idx.x;
+    uint32_t py = idx.y;
+    uint32_t pixelIndex = py * params.width + px;
+
+	params.traceState[pixelIndex] = state;
+}
+
+static __forceinline__ __device__ unsigned int getNextTraceState()
+{
+	const uint3 idx = optixGetLaunchIndex();
+	uint32_t px = idx.x;
+	uint32_t py = idx.y;
+	uint32_t pixelIndex = py * params.width + px;
+	return params.traceState[pixelIndex];
 }
 
 static __forceinline__ __device__ void packPointer(void* ptr, uint32_t& u0, uint32_t& u1)
@@ -241,8 +260,8 @@ static __forceinline__ __device__ float3 computeRadiance(GaussianParticle& gp, f
 
 static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_direction, RayPayload* payload)
 {
-    payload->traceState = TraceMeshPass;
-	
+	setNextTraceState(TraceMeshPass);
+
 	uint32_t u0, u1;
 	packPointer(payload, u0, u1);
 
@@ -348,22 +367,21 @@ static __forceinline__ __device__ void trace(RayData& rayData,
     rayData.density  = 1.0f - rayTransmittance;
 }
 
-static __forceinline__ __device__ float4 traceGaussians(RayData& rayData,
+static __forceinline__ __device__ float3 traceGaussians(RayData& rayData,
 	                                                    const float3& ray_o,
 	                                                    const float3& ray_d,
 	                                                    const float t_min,
 	                                                    const float t_max,
 	                                                    RayPayload* payload)
 {
-	payload->traceState = TraceGaussianPass;
+	setNextTraceState(TraceGaussianPass);
 
 	trace(rayData, ray_o, ray_d, t_min, t_max);
 
-    float4 accumulated_radiance = make_float4(
+    float3 accumulated_radiance = make_float3(
         rayData.radiance.x,
         rayData.radiance.y,
-        rayData.radiance.z,
-        rayData.density
+        rayData.radiance.z
     );
 
     return accumulated_radiance;

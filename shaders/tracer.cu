@@ -23,11 +23,13 @@ extern "C" __global__ void __raygen__raygeneration()
 	payload.t_hit      = 0.0f;
 	payload.numBounces = 0;
 	payload.hitNormal  = make_float3(0.0f);
+	payload.accumColor = make_float3(0.0f);
 
 	RayData rayData;
 	rayData.initialize();
 	payload.rayData = &rayData;
-	payload.traceState = TraceGaussianPass;
+	
+	setNextTraceState(TraceGaussianPass);
 
 	if (!params.mode_fisheye) {
 		getRay(optixGetLaunchIndex(),
@@ -52,117 +54,42 @@ extern "C" __global__ void __raygen__raygeneration()
 					  payload.currRayDirection);
 	}
 
-	// TODO: 3DGRUT trace state.
+	unsigned int timeout = 0;
 	while ((length(payload.currRayDirection) > 0.1f) && (payload.numBounces < MAX_BOUNCES)) {
 		const float3 ray_o = payload.currRayOrigin;
 		const float3 ray_d = payload.currRayDirection;
-		
+
 		traceMesh(ray_o, ray_d, &payload);
 		
+		if (payload.t_hit == 0.0f) payload.t_hit = params.t_max;
+		if (getNextTraceState() == TraceTerminate) break;
+		
+		float3 gsRadiance;
+		if (getNextTraceState() == TraceGaussianPass) {
+			gsRadiance = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
+			payload.accumColor = gsRadiance;
+			setNextTraceState(TraceTerminate);
+		}
 
+		timeout += 1;
+		if (timeout > TIMEOUT_ITERATIONS)
+        	break;
 	}
 
-//     float3 result;
-//     unsigned int timeout = 0;
-// 	//while ((length(payload.currRayDirection) > 0.1f) && (payload.numBounces < MAX_BOUNCES)) {
-// 	const float3 ray_o = payload.currRayOrigin;
-// 	const float3 ray_d = payload.currRayDirection;
-		
-// 	traceMesh(ray_o, ray_d, &payload);
-
-//     if (payload.t_hit == 0.0f) payload.t_hit = params.t_max;
-
-// 	//if (getNextTraceState() == TraceTerminate) break;
-//     //if (payload.traceState == TraceTerminate) break;
-
-//     traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
-//     result = make_float3(payload.rayData->radiance.x, payload.rayData->radiance.y, payload.rayData->radiance.z);
-//         //float4 gaussianRadDns;
-//         //if (payload.traceState == TraceLastGaussianPass) {
-//         //    result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
-//         //    payload.traceState = TraceTerminate;
-//         //}
-//         //else {
-//         //    result = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
-//         //}
-// 		//float4 gaussianRadiance;
-// 		//if (getNextTraceState() == TraceLastGaussianPass) {
-//   //      if (payload.traceState == TraceLastGaussianPass) {
-// 		//	result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
-// 		//}
-// 		//else {
-// 		//	result = traceGaussians(rayData, ray_o, ray_d, 1e-9, payload.t_hit, &payload);
-// 		//}
-
-//         //result = traceGaussians(rayData, ray_o, ray_d, 1e-9, params.t_max, &payload);
-
-//  //       timeout += 1;
-//  //       if (timeout > TIMEOUT_ITERATIONS)
-//  //           break;
-// 	//}
-
-//     // const uint3    launch_index = optixGetLaunchIndex();
-//     // const unsigned int image_index = launch_index.y * params.width + launch_index.x;
-//     // float3 accum_color = make_float3(result.x, result.y, result.z);
-
-//     // float3 rgb = clamp(accum_color, 0.0f, 1.0f);
-
-//     // params.output_buffer[image_index] = make_uchar3(
-//     //     quantizeUnsigned8Bits(rgb.x),
-//     //     quantizeUnsigned8Bits(rgb.y),
-//     //     quantizeUnsigned8Bits(rgb.z)
-//     // );
-
-// 	writeOutputBuffer(result);
-	
-	//float3 result = make_float3(0.0f);
-
-	//RayPayload prd;
-	//int recursion_count = 0;
-	//result = trace(params.handle, ray_origin, ray_direction, &prd);
-
-	//while (recursion_count < MAX_BOUNCES) {
-	//	result = trace(params.handle, ray_origin, ray_direction, &prd);
-	//	if (!prd.hit_reflection_primitive) {
-	//		break;
-	//	}
-
-	//	if (params.reflection_render_normals) {
-	//		result = (prd.hit_normal + 1) / 2;
-	//		break;
-	//	}
-
-	//	if (length(prd.hit_position - ray_origin) < 1e-6){
-	//		break;
-	//	}
-
-	//	ray_origin = prd.hit_position;
-	//	ray_direction = reflect(ray_direction, prd.hit_normal);
-	//	recursion_count++;
-	//}
-	//
-	//const uint3    launch_index = optixGetLaunchIndex();
-	//const unsigned int image_index = launch_index.y * params.width + launch_index.x;
-	//float3 accum_color = result;
-
-	//float3 rgb = clamp(accum_color, 0.0f, 1.0f);
-
-	//params.output_buffer[image_index] = make_uchar3(
-	//	quantizeUnsigned8Bits(rgb.x),
-	//	quantizeUnsigned8Bits(rgb.y),
-	//	quantizeUnsigned8Bits(rgb.z)
-	//);
+	float3 rgb = make_float3(payload.accumColor.x, payload.accumColor.y, payload.accumColor.z);
+	writeOutputBuffer(rgb);
 }
 
 extern "C" __global__ void __miss__miss()
 {
-    RayPayload* payload = getRayPayLoad();
+	if (getNextTraceState() == TraceMeshPass) {
+		RayPayload* payload = getRayPayLoad();
 
-    if (payload->traceState == TraceMeshPass) {
-       payload->currRayOrigin    = make_float3(0.0f);
-       payload->currRayDirection = make_float3(0.0f);
-       payload->traceState       = TraceLastGaussianPass;
-    }
+		payload->currRayOrigin    = make_float3(0.0f);
+		payload->currRayDirection = make_float3(0.0f);
+
+		setNextTraceState(TraceGaussianPass);
+	}
 }
 
 #define compareAndSwapHitPayloadValue(hit, i_id, i_distance)                      \
@@ -200,8 +127,7 @@ extern "C" __global__ void __closesthit__closesthit()
 {
 	RayPayload* payload = getRayPayLoad();
 	unsigned int numBounces = payload->numBounces;
-	//unsigned int nextTraceState = getNextTraceState();
-    unsigned int nextTraceState = payload->traceState;
+	unsigned int nextState = getNextTraceState();
 
 	float  t_hit = optixGetRayTmax();
 	float3 ray_o = optixGetWorldRayOrigin();
@@ -211,7 +137,7 @@ extern "C" __global__ void __closesthit__closesthit()
 	float3 normal = getBarycentricNormal(hitMesh);
 
 	float3 newRayDirection = make_float3(0.0f);
-	nextTraceState = TraceGaussianPass;
+	nextState = TraceGaussianPass;
 
 	if (params.type == MIRROR)
 		renderMirror(ray_d, normal, newRayDirection, numBounces);
@@ -222,16 +148,5 @@ extern "C" __global__ void __closesthit__closesthit()
 	payload->hitNormal        = normal;
 	payload->numBounces       = numBounces;
 
-	//setNextTraceState(nextTraceState);
-    payload->traceState = nextTraceState;
-	 
-	//payload->hit_count++;
-	//payload->hit_reflection_primitive = true;
-	//payload->t_hit_reflection = t_hit;
-
-	//Mesh hitMesh = params.d_meshes[optixGetInstanceId()];
-	//float3 hit_normal = getBarycentricNormal(hitMesh);
-
-	//payload->hit_normal = hit_normal;
-	//payload->hit_position = ray_d * t_hit + ray_o;
+	setNextTraceState(nextState);
 }

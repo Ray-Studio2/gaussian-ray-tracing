@@ -56,12 +56,6 @@ GaussianTracer::~GaussianTracer()
     if (params.d_particles) CUDA_CHECK(cudaFree((void*)params.d_particles));
     if (params.d_meshes) CUDA_CHECK(cudaFree((void*)params.d_meshes));
     if (d_params) CUDA_CHECK(cudaFree((void*)d_params));
-
-    //for (auto& mesh : meshes) {
-    //    if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
-    //    if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
-    //}
-
     if (pipeline) OPTIX_CHECK(optixPipelineDestroy(pipeline));
     if (raygen_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(raygen_prog_group));
     if (miss_prog_group) OPTIX_CHECK(optixProgramGroupDestroy(miss_prog_group));
@@ -84,7 +78,7 @@ void GaussianTracer::initializeOptix()
 	createSBT();
 
     createGaussianParticlesBVH();
-    
+
     initializeParams();
 }
 
@@ -482,7 +476,6 @@ void GaussianTracer::initializeParams()
 {
     params.output_buffer             = nullptr;
     params.handle                    = gaussian_handle;
-    params.k                         = MAX_K;
     params.t_min                     = 1e-3f;
     params.t_max                     = 1e5f;
     params.minTransmittance          = 0.001f;
@@ -493,7 +486,9 @@ void GaussianTracer::initializeParams()
     params.mode_fisheye              = false;
 
     params.type       = MIRROR;
-	params.traceState = TraceLastGaussianPass;
+
+    size_t numPixels = size_t(params.width) * params.height;
+    CUDA_CHECK(cudaMalloc(&params.traceState, numPixels * sizeof(unsigned int)));
 
     {
         CUdeviceptr d_particles;
@@ -560,10 +555,6 @@ void GaussianTracer::updateCamera(Camera& camera, bool& camera_changed)
 void GaussianTracer::removePrimitive()
 {
     mesh_instances.clear();
-    //for (auto& mesh : meshes) {
-    //    if (mesh.vertices) CUDA_CHECK(cudaFree(mesh.vertices));
-    //    if (mesh.faces) CUDA_CHECK(cudaFree(mesh.faces));
-    //}
     meshes.clear();
 
     if (params.d_meshes) {
