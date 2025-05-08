@@ -175,8 +175,6 @@ void GUI::keyboardEvent()
 
     // Render reflection primitive normals
 	if (ImGui::IsKeyPressed(ImGuiKey_N)) {
-		// reflection_render_normals = !reflection_render_normals;
-		// m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
         renderNormal = !renderNormal;
         m_tracer->setRenderType(renderNormal ? NORMAL : MIRROR);
     }
