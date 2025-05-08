@@ -428,10 +428,13 @@ static __forceinline__ __device__ void renderNormal(const float3 ray_o,
 	traceState = TraceTerminate;
 }
 
-static __forceinline__ __device__ bool refract(float3& newRayDirction,
+// TODO: Add safe_normalize
+static __forceinline__ __device__ void refract(float3& newRayDirction,
 											   const float3 ray_d,
 											   float3 normal,
-											   const float etai_over_etat)
+											   const float etai_over_etat,
+											   float& t_hit,
+											   unsigned int& numBounces)
 {
 	float ri;
 	if (dot(ray_d, normal) < 0.0f) {
@@ -445,16 +448,20 @@ static __forceinline__ __device__ bool refract(float3& newRayDirction,
 	float cos_theta = fminf(dot(-ray_d, normal), 1.0f);
 	float sin_theta = sqrtf(1.0f - cos_theta * cos_theta);
 
-	bool can_refract = ri * sin_theta <= 1.0f;
-	if (can_refract) {
+	bool cannot_refract = ri * sin_theta > 1.0f;
+	if (cannot_refract) {
+		// Reflect
+		float3 reflected_normal = dot(ray_d, normal) < 0.0f ? normal : -normal;
+		newRayDirction = reflect(ray_d, reflected_normal);
+		numBounces += 1;
+	}
+	else {
+		// Refract
 		float3 r_out_perp = ri * (ray_d + cos_theta * normal);
 		float3 r_out_parallel = -sqrtf(fabsf(1.0f - dot(r_out_perp, r_out_perp))) * normal;
-
 		newRayDirction = r_out_perp + r_out_parallel;
-		// newRayDirction = normalize(newRayDirction);
+		t_hit += REFRACTION_EPS_SHIFT;
 	}
-
-	return can_refract;
 }
 
 static __forceinline__ __device__ void renderGlass(const float3 ray_d,
@@ -466,20 +473,12 @@ static __forceinline__ __device__ void renderGlass(const float3 ray_d,
 	const Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
 	const unsigned int primitive_index = optixGetPrimitiveIndex();
 	
+	// TODO: Set n2 in host code.
 	float n1 = 1.0003f; // Air
-	float n2 = hitMesh.faces[primitive_index].x;
+	float n2 = 1.5f;    // Glass
 	float etai_over_etat = n2 / n1;
 
-	bool can_refract = refract(newRayDirction, ray_d, normal, etai_over_etat);
-	if (!can_refract) {
-		float3 reflected_normal = dot(ray_d, normal) < 0.0f ? normal : -normal;
-		newRayDirction = reflect(ray_d, reflected_normal);
-		// newRayDirction = normalize(newRayDirction);
-		numBounces += 1;
-	}
-	else {
-		t_hit += REFRACTION_EPS_SHIFT;
-	}
+	refract(newRayDirction, ray_d, normal, etai_over_etat, t_hit, numBounces);
 }
 
 static __forceinline__ __device__ void writeOutputBuffer(float3 rgb)
