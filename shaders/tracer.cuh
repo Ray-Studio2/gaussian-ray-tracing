@@ -401,6 +401,31 @@ static __forceinline__ __device__ void renderMirror(const float3 ray_d,
 	numBounces += 1;
 }
 
+static __forceinline__ __device__ void renderNormal(const float3 ray_o,
+													const float3 ray_d,
+													const float3 normal,
+													float& t_hit,
+													unsigned int& traceState,
+													RayPayload* payload)
+{
+	const float4 gsRadDns = traceGaussians(payload->rayData[0], 
+										   ray_o, 
+										   ray_d, 
+										   params.t_min, 
+										   t_hit, 
+										   payload);
+	float3 radiance = make_float3(gsRadDns.x, gsRadDns.y, gsRadDns.z);
+	float alpha = gsRadDns.w;
+	payload->accumColor += radiance;
+	payload->accumAlpha += alpha;
+
+	const float3 normalColor = (normal + 1) / 2;
+	payload->accumColor += normalColor * (1.0f - alpha);
+	payload->accumAlpha += (1.0f - alpha);
+
+	traceState = TraceTerminate;
+}
+
 static __forceinline__ __device__ void writeOutputBuffer(float3 rgb)
 {
 	const uint3 launch_index = optixGetLaunchIndex();

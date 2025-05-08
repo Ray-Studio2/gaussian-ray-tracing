@@ -172,6 +172,9 @@ extern "C" __global__ void __closesthit__closesthit()
 
 	if (params.type == MIRROR)
 		renderMirror(ray_d, normal, newRayDirection, numBounces);
+	else if (params.type == NORMAL) {
+		renderNormal(ray_o, ray_d, normal, t_hit, nextState, payload);
+	}
 
 	payload->t_hit            = t_hit;
 	payload->currRayOrigin    = ray_o + t_hit * ray_d;

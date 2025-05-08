@@ -474,18 +474,16 @@ void GaussianTracer::buildAccelationStructure(std::vector<OptixInstance>& instan
 
 void GaussianTracer::initializeParams()
 {
-    params.output_buffer             = nullptr;
-    params.handle                    = gaussian_handle;
-    params.t_min                     = 1e-3f;
-    params.t_max                     = 1e5f;
-    params.minTransmittance          = 0.001f;
-    params.alpha_min                 = alpha_min;
-    params.sh_degree_max             = 0;
-    params.mesh_handle               = mesh_handle;
-    params.reflection_render_normals = false;
-    params.mode_fisheye              = false;
-
-    params.type       = MIRROR;
+    params.output_buffer    = nullptr;
+    params.handle           = gaussian_handle;
+    params.t_min            = 1e-3f;
+    params.t_max            = 1e5f;
+    params.minTransmittance = 0.001f;
+    params.alpha_min        = alpha_min;
+    params.sh_degree_max    = 0;
+    params.mesh_handle      = mesh_handle;
+    params.mode_fisheye     = false;
+    params.type             = MIRROR;
 
     size_t numPixels = size_t(params.width) * params.height;
     CUDA_CHECK(cudaMalloc(&params.traceState, numPixels * sizeof(unsigned int)));
@@ -572,9 +570,9 @@ void GaussianTracer::updateParamsTraversableHandle()
 	params.mesh_handle = mesh_handle;
 }
 
-void GaussianTracer::setReflectionMeshRenderNormal(bool val)
+void GaussianTracer::setRenderType(unsigned int renderType)
 {
-    params.reflection_render_normals = val;
+    params.type = renderType;
 }
 
 void GaussianTracer::createPlane()
