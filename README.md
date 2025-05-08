@@ -44,7 +44,7 @@ $ gaussian-ray-tracing.exe -p /path/to/ply_file --width width_value --height hei
 ```
 
 ## 🦤 Examples
-
+_Executed the implementation on a PLY file trained using NVIDIA’s 3DGRUT_
 ### 🪞Reflection
 <p align="center">
   <img width="60%" src="assets/reflection.gif">
