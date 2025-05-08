@@ -175,8 +175,8 @@ void GUI::keyboardEvent()
 
     // Render reflection primitive normals
 	if (ImGui::IsKeyPressed(ImGuiKey_N)) {
-		reflection_render_normals = !reflection_render_normals;
-		m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
+        renderNormal = !renderNormal;
+        m_tracer->setRenderType(renderNormal ? NORMAL : MIRROR);
     }
 
 	// Set camera mode
@@ -349,8 +349,8 @@ void GUI::renderPanel()
 
         ImGui::Spacing();
 
-        if (ImGui::Checkbox("Render Normals", &reflection_render_normals)) {
-            m_tracer->setReflectionMeshRenderNormal(reflection_render_normals);
+        if (ImGui::Checkbox("Render Normals", &renderNormal)) {
+            m_tracer->setRenderType(renderNormal ? NORMAL : MIRROR);
         }
 
         if (ImGui::Button("Remove primitives")) {

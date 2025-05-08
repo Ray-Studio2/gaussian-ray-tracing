@@ -41,7 +41,7 @@ public:
 	std::vector<Primitive>& getPrimitives() { return primitives->getPrimitives(); }
 	void removePrimitive();
 
-	void setReflectionMeshRenderNormal(bool val);
+	void setRenderType(unsigned int renderType);
 
 	void setSize(unsigned int width, unsigned int height);
 	float3 getGaussianCenter() { return m_gsData.getCenter(); }

@@ -62,7 +62,6 @@ struct Params
 
 	// Mesh
 	OptixTraversableHandle mesh_handle;
-	bool reflection_render_normals;
 
 	// FishEye
 	bool mode_fisheye;
@@ -81,6 +80,7 @@ typedef Record<HitData>    HitRecord;
 enum MeshType
 {
     MIRROR = 0,
+	NORMAL = 1
 };
 
 enum TraceState
