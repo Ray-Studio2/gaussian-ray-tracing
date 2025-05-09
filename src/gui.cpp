@@ -173,10 +173,15 @@ void GUI::keyboardEvent()
         m_tracer->createSphere();
     }
 
-    // Render reflection primitive normals
-	if (ImGui::IsKeyPressed(ImGuiKey_N)) {
-        renderNormal = !renderNormal;
-        m_tracer->setRenderType(renderNormal ? NORMAL : MIRROR);
+    // Set render type
+    if (ImGui::IsKeyPressed(ImGuiKey_M)) {
+        m_tracer->setRenderType(MIRROR);
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_N)) {
+        m_tracer->setRenderType(NORMAL);
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+        m_tracer->setRenderType(GLASS);
     }
 
 	// Set camera mode
@@ -309,7 +314,7 @@ void GUI::renderPanel()
 
     ImGui::Spacing();
 
-    if (ImGui::CollapsingHeader("Reflection"))
+    if (ImGui::CollapsingHeader("Applications"))
     {
 		if (ImGui::Button("Add Primitive"))
 		{
@@ -349,8 +354,17 @@ void GUI::renderPanel()
 
         ImGui::Spacing();
 
-        if (ImGui::Checkbox("Render Normals", &renderNormal)) {
-            m_tracer->setRenderType(renderNormal ? NORMAL : MIRROR);
+        // Set render type
+        if (ImGui::Button("Mirror")) {
+            m_tracer->setRenderType(MIRROR);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Normal")) {
+            m_tracer->setRenderType(NORMAL);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Glass")) {
+            m_tracer->setRenderType(GLASS);
         }
 
         if (ImGui::Button("Remove primitives")) {
