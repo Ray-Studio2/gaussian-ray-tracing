@@ -146,8 +146,8 @@ private:
 	// Camera mode
 	bool is_fisheye_mode = false;
 
-	// Render type
-	unsigned int renderType = 0;
-
+	// Render type flag
+	bool renderMirror = true;
 	bool renderNormal = false;
+	bool renderGlass  = false;
 };
