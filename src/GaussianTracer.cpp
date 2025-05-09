@@ -485,6 +485,8 @@ void GaussianTracer::initializeParams()
     params.mode_fisheye     = false;
     params.type             = MIRROR;
 
+    params.onShadow = false;
+
     size_t numPixels = size_t(params.width) * params.height;
     CUDA_CHECK(cudaMalloc(&params.traceState, numPixels * sizeof(unsigned int)));
 

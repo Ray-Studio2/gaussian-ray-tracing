@@ -52,6 +52,8 @@ struct RayPayload
 	float3  	 directLight;
 	float 		 blockingRadiance;
 
+	float3 lightVisibility;
+
 	RayData* rayData;
 };
 
@@ -303,7 +305,7 @@ static __forceinline__ __device__ void traceGPs(GaussianPayload& gaussianPayload
 			   t_max,
 			   0.0f,
 			   OptixVisibilityMask(255),
-			   OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+			   params.onShadow ? OPTIX_RAY_FLAG_NONE : OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
 			   0, // SBT offset
 			   1, // SBT stride
 			   0, // missSBTIndex

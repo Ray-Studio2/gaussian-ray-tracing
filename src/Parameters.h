@@ -71,6 +71,8 @@ struct Params
     int32_t type;
 
 	unsigned int* traceState;
+
+	bool onShadow;
 };
 
 typedef Record<RayGenData> RayGenRecord;

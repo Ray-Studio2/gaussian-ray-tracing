@@ -119,6 +119,11 @@ extern "C" __global__ void __miss__miss()
 
 		setNextTraceState(TraceLastGaussianPass);
 	}
+
+	if (params.onShadow) {
+		RayPayload* payload = getRayPayLoad();
+		payload->lightVisibility = make_float3(1.0f);
+	}
 }
 
 #define compareAndSwapHitPayloadValue(hit, i_id, i_distance)                      \
@@ -154,34 +159,47 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
-	RayPayload* payload = getRayPayLoad();
-	unsigned int numBounces = payload->numBounces;
-	unsigned int nextState = getNextTraceState();
+	if (params.onShadow){
+		RayPayload* payload = getRayPayLoad();
 
-	float  t_hit = optixGetRayTmax();
-	float3 ray_o = optixGetWorldRayOrigin();
-	float3 ray_d = optixGetWorldRayDirection();
+		float  t_hit = optixGetRayTmax();
+		float3 ray_o = optixGetWorldRayOrigin();
+		float3 ray_d = optixGetWorldRayDirection();
+		float3 hitPos = ray_o + t_hit * ray_d;
 
-	Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
-	float3 normal = getBarycentricNormal(hitMesh);
-
-	float3 newRayDirection = make_float3(0.0f);
-	nextState = TraceGaussianPass;
-
-	if (params.type == MIRROR)
-		renderMirror(ray_d, normal, newRayDirection, numBounces);
-	else if (params.type == NORMAL) {
-		renderNormal(ray_o, ray_d, normal, t_hit, nextState, payload);
+		Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
+		float3 normal = getBarycentricNormal(hitMesh);
 	}
-	else if (params.type == GLASS) {
-		renderGlass(ray_d, normal, newRayDirection, t_hit, numBounces);
+	else {
+		RayPayload* payload = getRayPayLoad();
+		unsigned int numBounces = payload->numBounces;
+		unsigned int nextState = getNextTraceState();
+
+		float  t_hit = optixGetRayTmax();
+		float3 ray_o = optixGetWorldRayOrigin();
+		float3 ray_d = optixGetWorldRayDirection();
+
+		Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
+		float3 normal = getBarycentricNormal(hitMesh);
+
+		float3 newRayDirection = make_float3(0.0f);
+		nextState = TraceGaussianPass;
+
+		if (params.type == MIRROR)
+			renderMirror(ray_d, normal, newRayDirection, numBounces);
+		else if (params.type == NORMAL) {
+			renderNormal(ray_o, ray_d, normal, t_hit, nextState, payload);
+		}
+		else if (params.type == GLASS) {
+			renderGlass(ray_d, normal, newRayDirection, t_hit, numBounces);
+		}
+
+		payload->t_hit            = t_hit;
+		payload->currRayOrigin    = ray_o + t_hit * ray_d;
+		payload->currRayDirection = newRayDirection;
+		payload->hitNormal        = normal;
+		payload->numBounces       = numBounces;
+
+		setNextTraceState(nextState);
 	}
-
-	payload->t_hit            = t_hit;
-	payload->currRayOrigin    = ray_o + t_hit * ray_d;
-	payload->currRayDirection = newRayDirection;
-	payload->hitNormal        = normal;
-	payload->numBounces       = numBounces;
-
-	setNextTraceState(nextState);
 }
