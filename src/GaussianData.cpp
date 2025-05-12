@@ -30,6 +30,10 @@ void GaussianData::parse()
     auto yProps = element.getProperty<float>("y");
     auto zProps = element.getProperty<float>("z");
 
+    auto normal0Props = element.getProperty<float>("nx");
+    auto normal1Props = element.getProperty<float>("ny");
+    auto normal2Props = element.getProperty<float>("nz");
+
     auto scale0Props = element.getProperty<float>("scale_0");
     auto scale1Props = element.getProperty<float>("scale_1");
     auto scale2Props = element.getProperty<float>("scale_2");
@@ -98,6 +102,7 @@ void GaussianData::parse()
         GaussianParticle p;
 
         p.position = glm::vec3(xProps[i], yProps[i], zProps[i]);
+        p.normal   = glm::vec3(normal0Props[i], normal1Props[i], normal2Props[i]);
         p.scale = glm::vec3(expf(scale0Props[i]),
                             expf(scale1Props[i]),
                             expf(scale2Props[i]));
