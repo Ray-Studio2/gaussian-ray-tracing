@@ -91,5 +91,6 @@ enum TraceState
 	TraceLastGaussianPass = 0,
 	TraceGaussianPass     = 1,
 	TraceMeshPass         = 2,
-	TraceTerminate        = 3
+	TraceShadowPass       = 3,
+	TraceTerminate        = 4
 };

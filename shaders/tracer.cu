@@ -25,6 +25,8 @@ extern "C" __global__ void __raygen__raygeneration()
 	payload.accumAlpha       = 0.0f;
 	payload.blockingRadiance = 0.0f;
 	payload.directLight      = make_float3(0.0f);
+	payload.shadowFactor     = make_float3(0.0f);
+	payload.lightVisibility  = make_float3(0.0f);
 
 	RayData rayData;
 	rayData.initialize();
@@ -119,9 +121,10 @@ extern "C" __global__ void __miss__miss()
 
 		setNextTraceState(TraceLastGaussianPass);
 	}
-
-	if (params.onShadow) {
+	else if (getNextTraceState() == TraceShadowPass) {
 		RayPayload* payload = getRayPayLoad();
+
+		payload->test = true;
 		payload->lightVisibility = make_float3(1.0f);
 	}
 }
@@ -159,7 +162,7 @@ extern "C" __global__ void __anyhit__anyhit()
 
 extern "C" __global__ void __closesthit__closesthit()
 {
-	if (params.onShadow){
+	if (getNextTraceState() == TraceShadowPass) {
 		RayPayload* payload = getRayPayLoad();
 
 		float  t_hit = optixGetRayTmax();
@@ -167,10 +170,40 @@ extern "C" __global__ void __closesthit__closesthit()
 		float3 ray_d = optixGetWorldRayDirection();
 		float3 hitPos = ray_o + t_hit * ray_d;
 
-		Mesh hitMesh  = params.d_meshes[optixGetInstanceId()];
-		float3 normal = getBarycentricNormal(hitMesh);
+		GaussianParticle particle = params.d_particles[optixGetInstanceId()];
+		float3 normal = make_float3(particle.normal.x, 
+									particle.normal.y, 
+									particle.normal.z);
+				
+		const float3 lightPos = make_float3(0.0f, -1000.0f, 0.0f);
+    	const float3 lightDir = lightPos - hitPos;
+
+		payload->test = false;
+
+		uint32_t u0, u1;
+		packPointer(payload, u0, u1);
+		optixTrace(params.mesh_handle,
+					hitPos,
+					lightDir,
+					TRACE_MESH_TMIN,
+					TRACE_MESH_TMAX,
+					0.0f,       // rayTime
+					OptixVisibilityMask( 255 ),
+					OPTIX_RAY_FLAG_DISABLE_ANYHIT
+					| OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT
+					| OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+					0,            // SBT offset
+					1,            // SBT stride
+					0,            // missSBTIndex
+					u0, u1);
+
+		const float cosDN = 0.1f + .8f * 0.03f;
+
+		payload->shadowFactor = (.1f + (.2f + .8f * payload->lightVisibility) * cosDN);
+
+		return;
 	}
-	else {
+	else if (getNextTraceState() == TraceMeshPass) {
 		RayPayload* payload = getRayPayLoad();
 		unsigned int numBounces = payload->numBounces;
 		unsigned int nextState = getNextTraceState();
@@ -201,5 +234,6 @@ extern "C" __global__ void __closesthit__closesthit()
 		payload->numBounces       = numBounces;
 
 		setNextTraceState(nextState);
+		return;
 	}
 }

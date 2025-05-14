@@ -367,6 +367,10 @@ void GUI::renderPanel()
             m_tracer->setRenderType(GLASS);
         }
 
+        if (ImGui::Button("Shadow")) {
+            m_tracer->setShadow(true);
+        }
+
         if (ImGui::Button("Remove primitives")) {
 			m_tracer->removePrimitive();
 		}

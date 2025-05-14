@@ -55,6 +55,10 @@ public:
 	void createSphere();
 	void createLoadMesh(std::string filename);
 
+	void setShadow(bool onShadow)
+	{
+		params.onShadow = onShadow;
+	}
 private:
 	// Initialize Optix pipeline.
 	void createContext();

@@ -53,6 +53,9 @@ struct RayPayload
 	float 		 blockingRadiance;
 
 	float3 lightVisibility;
+	float3  shadowFactor;
+
+	bool test;
 
 	RayData* rayData;
 };
@@ -288,6 +291,33 @@ static __forceinline__ __device__ void traceMesh(float3 ray_origin, float3 ray_d
 	);
 }
 
+static __forceinline__ __device__ void traceShadow(const float3& ray_o,
+												   const float3& ray_d,
+												   const float t_min,
+												   const float t_max,
+												   RayPayload* payload)
+{
+	setNextTraceState(TraceShadowPass);
+
+	uint32_t u0, u1;
+	packPointer(payload, u0, u1);
+
+	optixTrace(
+		params.handle,
+		ray_o,
+		ray_d,
+		t_min,
+		t_max,
+		0.0f,
+		OptixVisibilityMask(255),
+		OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+		0,        // SBT offset
+		1,        // SBT stride
+		0,        // missSBTIndex
+		u0, u1
+	);
+}
+
 static __forceinline__ __device__ void traceGPs(GaussianPayload& gaussianPayload,
 												const float3& ray_o,
 												const float3& ray_d,
@@ -305,7 +335,7 @@ static __forceinline__ __device__ void traceGPs(GaussianPayload& gaussianPayload
 			   t_max,
 			   0.0f,
 			   OptixVisibilityMask(255),
-			   params.onShadow ? OPTIX_RAY_FLAG_NONE : OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+			   OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
 			   0, // SBT offset
 			   1, // SBT stride
 			   0, // missSBTIndex
@@ -384,6 +414,11 @@ static __forceinline__ __device__ float4 traceGaussians(RayData& rayData,
 	setNextTraceState(TraceGaussianPass);
 
 	trace(rayData, ray_o, ray_d, t_min, t_max);
+
+	if (params.onShadow) {
+		traceShadow(ray_o, ray_d, params.t_min, params.t_max, payload);
+		rayData.radiance *= payload->test ? make_float3(1.0f) : payload->shadowFactor;
+	}
 
     float4 accumulated_radiance = make_float4(
         rayData.radiance.x,
